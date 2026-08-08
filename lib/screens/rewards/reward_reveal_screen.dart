@@ -193,7 +193,7 @@ class _RewardRevealScreenState extends State<RewardRevealScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (reward != null) {
-                        context.read<RewardProvider>().claimReward(reward.id);
+                        context.read<RewardProvider>().claimReward(reward);
                       }
                       Navigator.pop(context);
                     },

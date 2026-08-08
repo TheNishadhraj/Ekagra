@@ -61,7 +61,20 @@ class RewardProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> claimReward(String id) async {
+  Future<void> claimRewardById(String id) async {
+    // If reward already exists in history, do nothing.
+    if (_history.any((r) => r.id == id)) {
+      return;
+    }
+    // Unknown id — nothing to persist since we don't have the full reward.
+    notifyListeners();
+  }
+
+  /// Record a DopamineReward as claimed/earned and persist it.
+  Future<void> claimReward(DopamineReward reward) async {
+    _latest = reward;
+    _history = [reward, ..._history];
+    await _persist();
     notifyListeners();
   }
 
