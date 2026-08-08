@@ -11,6 +11,7 @@ import '../screens/onboarding/dopamine_menu_setup_screen.dart';
 import '../screens/onboarding/notification_permission_screen.dart';
 import '../screens/onboarding/paywall_screen.dart';
 import '../screens/rewards/reward_reveal_screen.dart';
+import '../screens/rewards/reward_history_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/shared/main_shell.dart';
 import '../screens/someday/someday_list_screen.dart';
@@ -32,6 +33,7 @@ class AppRoutes {
   static const focus = '/focus';
   static const focusComplete = '/focus-complete';
   static const rewardReveal = '/reward-reveal';
+  static const rewardHistory = '/reward-history';
   static const timeline = '/timeline';
   static const bodyDouble = '/body-double';
   static const someday = '/someday';
@@ -68,6 +70,8 @@ class AppRoutes {
       case rewardReveal:
         final reward = routeSettings.arguments as DopamineReward?;
         return _fade(RewardRevealScreen(reward: reward), routeSettings);
+      case rewardHistory:
+        return _slide(const RewardHistoryScreen(), routeSettings);
       case timeline:
         return _slide(const DayViewScreen(), routeSettings);
       case bodyDouble:

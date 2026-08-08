@@ -96,6 +96,12 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => Navigator.pushNamed(context, AppRoutes.dopamineSetup),
             ),
             ListTile(
+              title: const Text('Reward History'),
+              subtitle: const Text('View your earned rewards'),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              onTap: () => Navigator.pushNamed(context, AppRoutes.rewardHistory),
+            ),
+            ListTile(
               title: const Text('Someday / Maybe List'),
               subtitle: const Text('Aspirational tasks without pressure'),
               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
