@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/constants.dart';
 import '../models/dopamine_menu_model.dart';
 import '../models/user_model.dart';
+import '../utils/safe_store.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const _userKey = 'ekagra_user';
@@ -31,53 +32,47 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString(_userKey);
-      if (userJson != null) {
-        try {
-          final map = jsonDecode(userJson);
-          if (map is Map<String, dynamic>) {
-            _user = UserModel.fromJson(map);
-          }
-        } catch (e) {
-          debugPrint('SettingsProvider user JSON parse error: $e');
-        }
-      } else {
-        final complete = prefs.getBool(_onboardingKey) ?? false;
-        _user = _user.copyWith(onboardingComplete: complete);
-      }
+    final prefs = await SharedPreferences.getInstance();
 
-      final menuJson = prefs.getString(_menuKey);
-      if (menuJson != null) {
-        try {
-          final map = jsonDecode(menuJson);
-          if (map is Map<String, dynamic>) {
-            _menu = DopamineMenu.fromJson(map);
-          }
-        } catch (e) {
-          debugPrint('SettingsProvider menu JSON parse error: $e');
-        }
-      }
+    // A corrupt user record must not block startup. We fall back to the
+    // guest profile but preserve the onboarding flag, so a returning user
+    // is not dumped back into the welcome flow they already completed.
+    final userMap = SafeStore.decodeObject(
+      raw: prefs.getString(_userKey),
+      key: _userKey,
+    );
+    final restored = userMap == null
+        ? null
+        : SafeStore.tryBuild(() => UserModel.fromJson(userMap), key: _userKey);
 
-      _darkMode = prefs.getBool('ekagra_dark_mode') ?? false;
-    } catch (e) {
-      debugPrint('SettingsProvider load error: $e');
+    if (restored != null) {
+      _user = restored;
+    } else {
+      final complete = prefs.getBool(_onboardingKey) ?? false;
+      _user = _user.copyWith(onboardingComplete: complete);
     }
+
+    final menuMap = SafeStore.decodeObject(
+      raw: prefs.getString(_menuKey),
+      key: _menuKey,
+    );
+    final menu = menuMap == null
+        ? null
+        : SafeStore.tryBuild(() => DopamineMenu.fromJson(menuMap),
+            key: _menuKey);
+    if (menu != null) _menu = menu;
+
+    _darkMode = prefs.getBool('ekagra_dark_mode') ?? false;
     _loaded = true;
     notifyListeners();
   }
 
   Future<void> _persist() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_userKey, jsonEncode(_user.toJson()));
-      await prefs.setString(_menuKey, jsonEncode(_menu.toJson()));
-      await prefs.setBool(_onboardingKey, _user.onboardingComplete);
-      await prefs.setBool('ekagra_dark_mode', _darkMode);
-    } catch (e) {
-      debugPrint('SettingsProvider _persist error: $e');
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(_user.toJson()));
+    await prefs.setString(_menuKey, jsonEncode(_menu.toJson()));
+    await prefs.setBool(_onboardingKey, _user.onboardingComplete);
+    await prefs.setBool('ekagra_dark_mode', _darkMode);
   }
 
   Future<void> setAdhdTraits(List<AdhdTrait> traits) async {
@@ -136,10 +131,11 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> enablePro() async {
-    _user = _user.copyWith(
-      isPro: true,
-      trialStartedAt: _user.trialStartedAt ?? DateTime.now(),
-    );
+    // Record the trial start time on first upgrade so the legacy `isPro`
+    // path can surface "X days left" and detect expiry. Leaving it null
+    // preserves the old behaviour for paid installs that pre-date this field.
+    final trialStart = _user.trialStartedAt ?? DateTime.now();
+    _user = _user.copyWith(isPro: true, trialStartedAt: trialStart);
     await _persist();
     notifyListeners();
   }

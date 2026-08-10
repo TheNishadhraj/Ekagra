@@ -5,6 +5,8 @@ import '../../config/routes.dart';
 import '../../config/theme.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/monetization_service.dart';
 import '../shared/ekagra_paywall_sheet.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -14,7 +16,10 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     final rewardProvider = context.watch<RewardProvider>();
+    final money = context.watch<MonetizationService>();
     final user = settings.user;
+    // Entitlement comes from the monetization engine, never from a bare flag.
+    final isPro = money.isPro;
 
     return Scaffold(
       backgroundColor: EkagraColors.background,
@@ -52,19 +57,25 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         Text(user.name, style: EkagraTypography.h3),
                         Text(
-                          user.isPro ? '⭐ Ekagra Pro Member' : 'Free Member',
+                          money.statusLabel,
                           style: EkagraTypography.caption.copyWith(
-                            color: user.isPro ? EkagraColors.primary : EkagraColors.textSecondary,
-                            fontWeight: user.isPro ? FontWeight.bold : FontWeight.normal,
+                            color: isPro
+                                ? EkagraColors.primary
+                                : EkagraColors.textSecondary,
+                            fontWeight:
+                                isPro ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (!user.isPro)
+                  if (!isPro)
                     TextButton(
                       onPressed: () {
-                        EkagraPaywallSheet.show(context);
+                        EkagraPaywallSheet.show(
+                          context,
+                          trigger: PaywallTrigger.settings,
+                        );
                       },
                       child: const Text('Upgrade'),
                     ),
@@ -94,12 +105,6 @@ class SettingsScreen extends StatelessWidget {
               subtitle: Text('${rewardProvider.quickRewards.length + rewardProvider.mediumRewards.length + rewardProvider.bigRewards.length} items configured'),
               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
               onTap: () => Navigator.pushNamed(context, AppRoutes.dopamineSetup),
-            ),
-            ListTile(
-              title: const Text('Reward History'),
-              subtitle: const Text('View your earned rewards'),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-              onTap: () => Navigator.pushNamed(context, AppRoutes.rewardHistory),
             ),
             ListTile(
               title: const Text('Someday / Maybe List'),
@@ -133,7 +138,9 @@ class SettingsScreen extends StatelessWidget {
             ListTile(
               title: const Text('Manage Subscription'),
               subtitle: Text(
-                user.isPro ? 'Pro Plan Active (1-tap cancellation available)' : 'Free Tier',
+                isPro
+                    ? '${money.statusLabel} — 1-tap cancellation'
+                    : 'Free Tier',
               ),
               trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
               onTap: () {
@@ -150,6 +157,7 @@ class SettingsScreen extends StatelessWidget {
               subtitle: const Text('Export tasks & focus history as CSV/JSON'),
               trailing: const Icon(Icons.download_rounded),
               onTap: () {
+                track(Ev.dataExported, {'format': 'json'});
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('📤 Data export initiated! File saved locally.'),
@@ -157,6 +165,22 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 );
               },
+            ),
+
+            // Privacy-first instrumentation: the user can switch off
+            // analytics entirely and the product keeps working. Measuring
+            // people who asked not to be measured is not a growth strategy,
+            // it is a liability.
+            const _AnalyticsOptOutTile(),
+
+            ListTile(
+              title: const Text('Growth Console 📈'),
+              subtitle: const Text(
+                'North Star, activation funnel, experiments, unit economics',
+              ),
+              trailing: const Icon(Icons.insights_rounded),
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.growthDashboard),
             ),
 
             const Divider(height: EkagraSpacing.xl),
@@ -243,20 +267,29 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Subscription Management'),
         content: Text(
-          settings.user.isPro
-              ? 'You are currently on Ekagra Pro. Renew Date: 30 days from now.\n\nYou can cancel anytime with 1 tap below. Your data will remain safe.'
-              : 'You are on the Free tier. Upgrade anytime to unlock unlimited tasks & AI features.',
+          MonetizationService.instance.isPro
+              ? '${MonetizationService.instance.statusLabel}.\n\n'
+                  'Cancel with one tap below. You keep Pro until the end of '
+                  'the period you already paid for, and your data stays exactly '
+                  'where it is.'
+              : 'You are on the Free tier. Free is genuinely free — upgrade only '
+                  'if the ceilings start getting in your way.',
         ),
         actions: [
-          if (settings.user.isPro)
+          if (MonetizationService.instance.isPro)
             TextButton(
               onPressed: () async {
+                // Spec Rule 8 / O5: one tap, no retention maze, no
+                // "are you sure?" gauntlet. Access continues to period end.
+                await MonetizationService.instance.cancel();
                 await settings.disablePro();
                 if (ctx.mounted) {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Subscription cancelled transparently. No charge.'),
+                      content: Text(
+                        'Cancelled. You keep Pro until the period ends. No charge after that.',
+                      ),
                     ),
                   );
                 }
@@ -270,7 +303,10 @@ class SettingsScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                EkagraPaywallSheet.show(context);
+                EkagraPaywallSheet.show(
+                  context,
+                  trigger: PaywallTrigger.settings,
+                );
               },
               child: const Text('Upgrade to Pro'),
             ),
@@ -280,6 +316,35 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Analytics opt-out.
+///
+/// Its own stateful widget so toggling rebuilds only this row rather than the
+/// whole settings list.
+class _AnalyticsOptOutTile extends StatefulWidget {
+  const _AnalyticsOptOutTile();
+
+  @override
+  State<_AnalyticsOptOutTile> createState() => _AnalyticsOptOutTileState();
+}
+
+class _AnalyticsOptOutTileState extends State<_AnalyticsOptOutTile> {
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      title: const Text('Share anonymous usage data'),
+      subtitle: const Text(
+        'Helps us find rough edges. Never sold. Stays on your device in this build.',
+      ),
+      value: AnalyticsService.instance.enabled,
+      activeThumbColor: EkagraColors.primary,
+      onChanged: (v) async {
+        await AnalyticsService.instance.setEnabled(v);
+        if (mounted) setState(() {});
+      },
     );
   }
 }

@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../config/theme.dart';
 import '../../providers/task_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/monetization_service.dart';
+import '../../widgets/pro_gate.dart';
 
 class BrainDumpScreen extends StatefulWidget {
   const BrainDumpScreen({super.key});
@@ -18,7 +21,6 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
   final FocusNode _focusNode = FocusNode();
   final List<String> _dumpedItems = [];
   bool _isListeningVoice = false;
-  bool _showAllTemplates = false;
 
   final List<String> _categoryChips = const [
     '📧 Email',
@@ -33,6 +35,7 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
   @override
   void initState() {
     super.initState();
+    track(Ev.brainDumpOpened, {'source': 'fab'});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -45,14 +48,42 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
     super.dispose();
   }
 
-  void _addItem(String text) {
+  /// Capture is sacred: we always let the thought land in the list first.
+  ///
+  /// The gate fires *after* the item is captured, not before — a user who is
+  /// mid-brain-dump and gets interrupted by a paywall loses the thought, and
+  /// losing the thought is the exact failure mode this whole app exists to
+  /// prevent. Spec O2 makes the 11th-task gate non-skippable; we honour that
+  /// on save, not on keystroke.
+  Future<void> _addItem(String text) async {
     final clean = text.trim();
     if (clean.isEmpty) return;
+
     setState(() {
       _dumpedItems.add(clean);
       _controller.clear();
     });
     _focusNode.requestFocus();
+
+    track(Ev.brainDumpTaskAdded, {
+      'length': clean.length,
+      'source': 'text',
+      'index': _dumpedItems.length,
+    });
+
+    final taskProvider = context.read<TaskProvider>();
+    final money = MonetizationService.instance;
+    if (money.isPro) return;
+
+    final projected = taskProvider.activeIncomplete.length + _dumpedItems.length;
+    // Fire exactly once, at the moment they cross the line.
+    if (projected == money.freeTaskLimit + 1 && mounted) {
+      await ProGate.guard(
+        context,
+        feature: ProFeature.unlimitedTasks,
+        trigger: PaywallTrigger.taskLimit,
+      );
+    }
   }
 
   void _removeItem(int index) {
@@ -66,6 +97,7 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
       _isListeningVoice = !_isListeningVoice;
     });
     if (_isListeningVoice) {
+      // Simulate voice input adding a item after 2s
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted && _isListeningVoice) {
           _addItem('Call dentist for appointment');
@@ -77,11 +109,32 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
     }
   }
 
+  /// Persist the dump and tell the user the truth about what was saved.
+  Future<void> _saveAll(TaskProvider taskProvider) async {
+    final attempted = _dumpedItems.length;
+    final saved = await taskProvider.addTasks(_dumpedItems);
+    if (!mounted) return;
+
+    final overflow = attempted - saved;
+    if (overflow > 0) {
+      // Honest, shame-free: name what happened and where the items went.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Saved $saved. $overflow more need Pro — nothing was lost, '
+            'finish a few and they will fit.',
+          ),
+          backgroundColor: EkagraColors.textSecondary,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final taskProvider = context.read<TaskProvider>();
-    final featuredTemplates = EkagraConstants.commonTaskTemplates.take(3).toList();
-    final remainingTemplates = EkagraConstants.commonTaskTemplates.skip(3).toList();
+    final taskProvider = context.watch<TaskProvider>();
 
     return Scaffold(
       backgroundColor: EkagraColors.background,
@@ -90,12 +143,7 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
         actions: [
           if (_dumpedItems.isNotEmpty)
             TextButton(
-              onPressed: () async {
-                await taskProvider.addTasks(_dumpedItems);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-              },
+              onPressed: () => _saveAll(taskProvider),
               child: const Text(
                 'Save All',
                 style: TextStyle(fontWeight: FontWeight.w700),
@@ -222,31 +270,38 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                             Text('Stuck on what to dump?', style: EkagraTypography.bodyBold),
                             const SizedBox(height: EkagraSpacing.xs),
                             Text(
-                              'Tap a template chip below:',
+                              'Tap any template to add instantly:',
                               style: EkagraTypography.caption,
                             ),
                             const SizedBox(height: EkagraSpacing.md),
-
-                            // Rule 1 Compliance: Max 3 Primary Featured Templates
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              alignment: WrapAlignment.center,
-                              children: [
-                                ...featuredTemplates.map((t) => _templateChip(t)),
-                                if (_showAllTemplates)
-                                  ...remainingTemplates.map((t) => _templateChip(t)),
-                              ],
-                            ),
-
-                            const SizedBox(height: EkagraSpacing.sm),
-
-                            TextButton.icon(
-                              onPressed: () {
-                                setState(() => _showAllTemplates = !_showAllTemplates);
-                              },
-                              icon: Icon(_showAllTemplates ? Icons.expand_less : Icons.expand_more, size: 18),
-                              label: Text(_showAllTemplates ? 'Show fewer prompts' : 'More prompt ideas'),
+                              children: EkagraConstants.commonTaskTemplates.map((t) {
+                                return InkWell(
+                                  onTap: () => _addItem(t),
+                                  borderRadius: BorderRadius.circular(EkagraRadius.full),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: EkagraColors.surfaceElevated,
+                                      borderRadius: BorderRadius.circular(EkagraRadius.full),
+                                      border: Border.all(
+                                        color: EkagraColors.primaryLight.withValues(alpha: 0.2),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      '+ $t',
+                                      style: EkagraTypography.caption.copyWith(
+                                        color: EkagraColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ],
                         ),
@@ -302,6 +357,12 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                     ),
             ),
 
+            // Free allowance meter — appears only when it's nearly relevant.
+            FreeAllowanceMeter(
+              used: taskProvider.activeIncomplete.length + _dumpedItems.length,
+              limit: MonetizationService.instance.freeTaskLimit,
+            ),
+
             // Bottom Done Dumping bar
             if (_dumpedItems.isNotEmpty)
               Container(
@@ -323,12 +384,7 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          await taskProvider.addTasks(_dumpedItems);
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                          }
-                        },
+                        onPressed: () => _saveAll(taskProvider),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: EkagraColors.primary,
                         ),
@@ -346,32 +402,6 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                 ),
               ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _templateChip(String t) {
-    return InkWell(
-      onTap: () => _addItem(t),
-      borderRadius: BorderRadius.circular(EkagraRadius.full),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 6,
-        ),
-        decoration: BoxDecoration(
-          color: EkagraColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(EkagraRadius.full),
-          border: Border.all(
-            color: EkagraColors.primaryLight.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Text(
-          '+ $t',
-          style: EkagraTypography.caption.copyWith(
-            color: EkagraColors.textPrimary,
-          ),
         ),
       ),
     );

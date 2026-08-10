@@ -149,6 +149,10 @@ class UserModel {
   final int currentConsecutiveDays;
   final DateTime createdAt;
 
+  /// Default trial length in days. Kept here so the legacy `isPro` path
+  /// and the newer [MonetizationService] path agree on duration.
+  static const int trialDays = 7;
+
   const UserModel({
     required this.id,
     this.displayName,
@@ -180,16 +184,20 @@ class UserModel {
 
   String get name => displayName ?? 'friend';
 
+  /// Whether the legacy `isPro` trial is currently within its window.
+  /// Returns false if the user is not on a trial (paid, or never started).
   bool get isTrialActive {
-    if (trialStartedAt == null) return false;
-    final diff = DateTime.now().difference(trialStartedAt!).inDays;
-    return diff < 7;
+    final start = trialStartedAt;
+    if (start == null || isAnonymous) return false;
+    return DateTime.now().difference(start).inDays < trialDays;
   }
 
+  /// Whole days remaining on the legacy trial. Zero once expired.
   int get trialDaysRemaining {
-    if (trialStartedAt == null) return 0;
-    final elapsed = DateTime.now().difference(trialStartedAt!).inDays;
-    return (7 - elapsed).clamp(0, 7);
+    final start = trialStartedAt;
+    if (start == null || isAnonymous) return 0;
+    final elapsed = DateTime.now().difference(start).inDays;
+    return (trialDays - elapsed).clamp(0, trialDays);
   }
 
   UserModel copyWith({
@@ -258,7 +266,7 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String? ?? 'guest',
+      id: json['id'] as String,
       displayName: json['displayName'] as String?,
       email: json['email'] as String?,
       adhdTraits: (json['adhdTraits'] as List<dynamic>?)
@@ -286,9 +294,7 @@ class UserModel {
           : null,
       totalActiveDays: json['totalActiveDays'] as int? ?? 0,
       currentConsecutiveDays: json['currentConsecutiveDays'] as int? ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'] as String)
-          : DateTime.now(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 }

@@ -151,87 +151,41 @@ class TaskModel {
       };
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
-    final now = DateTime.now();
-
-    TaskScheduleType parseScheduleType(dynamic val) {
-      if (val is String) {
-        try {
-          return TaskScheduleType.values.byName(val);
-        } catch (_) {}
-      }
-      return TaskScheduleType.anytime;
-    }
-
-    DeadlineType parseDeadlineType(dynamic val) {
-      if (val is String) {
-        try {
-          return DeadlineType.values.byName(val);
-        } catch (_) {}
-      }
-      return DeadlineType.none;
-    }
-
-    TaskStatus parseStatus(dynamic val) {
-      if (val is String) {
-        try {
-          return TaskStatus.values.byName(val);
-        } catch (_) {}
-      }
-      return TaskStatus.notStarted;
-    }
-
-    EnergyNeeded parseEnergyNeeded(dynamic val) {
-      if (val is String) {
-        try {
-          return EnergyNeeded.values.byName(val);
-        } catch (_) {}
-      }
-      return EnergyNeeded.medium;
-    }
-
-    DateTime parseDate(dynamic val, DateTime fallback) {
-      if (val is String) {
-        try {
-          return DateTime.parse(val);
-        } catch (_) {}
-      }
-      return fallback;
-    }
-
-    DateTime? parseNullableDate(dynamic val) {
-      if (val is String) {
-        try {
-          return DateTime.parse(val);
-        } catch (_) {}
-      }
-      return null;
-    }
-
     return TaskModel(
-      id: (json['id'] as String?)?.isNotEmpty == true
-          ? json['id'] as String
-          : const Uuid().v4(),
-      title: (json['title'] as String?) ?? 'Untitled Task',
+      id: json['id'] as String,
+      title: json['title'] as String,
       notes: json['notes'] as String?,
       emoji: json['emoji'] as String?,
-      scheduleType: parseScheduleType(json['scheduleType']),
-      deadlineType: parseDeadlineType(json['deadlineType']),
-      deadline: parseNullableDate(json['deadline']),
-      status: parseStatus(json['status']),
-      energyNeeded: parseEnergyNeeded(json['energyNeeded']),
+      scheduleType: TaskScheduleType.values.byName(
+        json['scheduleType'] as String? ?? 'anytime',
+      ),
+      deadlineType: DeadlineType.values.byName(
+        json['deadlineType'] as String? ?? 'none',
+      ),
+      deadline: json['deadline'] != null
+          ? DateTime.parse(json['deadline'] as String)
+          : null,
+      status: TaskStatus.values.byName(json['status'] as String? ?? 'notStarted'),
+      energyNeeded: EnergyNeeded.values.byName(
+        json['energyNeeded'] as String? ?? 'medium',
+      ),
       estimatedMinutes: json['estimatedMinutes'] as int?,
       microCommitment: json['microCommitment'] as String?,
       category: json['category'] as String?,
       subtasks: (json['subtasks'] as List<dynamic>?)
-              ?.map((e) => e.toString())
+              ?.map((e) => e as String)
               .toList() ??
           const [],
       isDeleted: json['isDeleted'] as bool? ?? false,
-      createdAt: parseDate(json['createdAt'], now),
-      updatedAt: parseDate(json['updatedAt'], now),
-      completedAt: parseNullableDate(json['completedAt']),
-      lastTouchedAt: parseNullableDate(json['lastTouchedAt']),
-      skipCount: (json['skipCount'] as num?)?.toInt() ?? 0,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : null,
+      lastTouchedAt: json['lastTouchedAt'] != null
+          ? DateTime.parse(json['lastTouchedAt'] as String)
+          : null,
+      skipCount: json['skipCount'] as int? ?? 0,
       recurrenceRuleId: json['recurrenceRuleId'] as String?,
     );
   }

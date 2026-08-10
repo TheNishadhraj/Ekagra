@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../models/dopamine_reward_model.dart';
 import '../../providers/reward_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/growth_service.dart';
 
 class RewardRevealScreen extends StatefulWidget {
   final DopamineReward? reward;
@@ -24,8 +26,13 @@ class _RewardRevealScreenState extends State<RewardRevealScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final rewardProvider = context.read<RewardProvider>();
+      final reward = widget.reward ?? rewardProvider.generateRandomReward();
       setState(() {
-        _currentReward = widget.reward ?? rewardProvider.generateRandomReward();
+        _currentReward = reward;
+      });
+      track(Ev.rewardTriggered, {
+        'tier': reward.item.tier.name,
+        'is_rare': reward.isRare,
       });
     });
   }
@@ -41,8 +48,30 @@ class _RewardRevealScreenState extends State<RewardRevealScreen> {
         setState(() {
           _stage = 3;
         });
+        final reward = _currentReward;
+        if (reward != null) {
+          track(Ev.rewardRevealed, {
+            'reward_id': reward.id,
+            'tier': reward.item.tier.name,
+            'is_rare': reward.isRare,
+          });
+        }
       }
     });
+  }
+
+  /// Claiming the first reward IS the aha moment. Everything upstream —
+  /// capture, selection, focus — is setup; this is the payoff that teaches
+  /// the brain the loop is worth repeating.
+  Future<void> _claim(DopamineReward reward) async {
+    context.read<RewardProvider>().claimReward(reward.id);
+    track(Ev.rewardClaimed, {
+      'reward_id': reward.id,
+      'tier': reward.item.tier.name,
+      'is_rare': reward.isRare,
+    });
+    await GrowthService.instance.recordRewardClaimed();
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -193,9 +222,10 @@ class _RewardRevealScreenState extends State<RewardRevealScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (reward != null) {
-                        context.read<RewardProvider>().claimReward(reward);
+                        _claim(reward);
+                      } else {
+                        Navigator.pop(context);
                       }
-                      Navigator.pop(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: EkagraColors.primary,

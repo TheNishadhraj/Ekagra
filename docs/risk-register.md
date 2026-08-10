@@ -1,23 +1,87 @@
-# ⚠️ EKAGRA — RISK REGISTER
+# Risk Register
 
-This register tracks identified architectural, technical, product, and compliance risks, their potential severity, mitigation strategy, and designated owner.
-
----
-
-## Active Risk Register
-
-| Risk ID | Risk Description | Severity | Impact Area | Mitigation Strategy | Owner | Status |
-|---|---|---|---|---|---|---|
-| **RISK-01** | **Persistence Payload Corruption on Sudden Exit**<br>Rapid `_persist()` calls using `jsonEncode` with `SharedPreferences` can lose data or crash on load if corrupted. | **HIGH** | Data Integrity / Retention | Implemented defensive `try-catch` wrappers across all providers and crash-proof `TaskModel.fromJson` fallbacks. Verified via `test/resilience/task_provider_persistence_test.dart`. | Chief Architect | **RESOLVED** |
-| **RISK-02** | **Timer Drift & Background Freeze on Mobile OS**<br>Dart isolate timers suspend when app is backgrounded or device locks, causing incorrect countdowns on resume. | **HIGH** | User Focus Experience | Refactor `FocusProvider` remaining time calculation to rely strictly on wall-clock time deltas (`DateTime.now()` vs `endsAt`). | QA / Engineering | **Mitigating** |
-| **RISK-03** | **Rule-15 Compliance Regression in Copy/UI**<br>New screens or error messages may accidentally introduce shame words ("streak", "overdue", "failed") or harsh red UI colors. | **MEDIUM** | RSD Safety / UX | Integrated static source scanner (`test/rules/rule_15_copy_compliance_test.dart`) enforcing Rule 15 across all `lib/` string literals. | QA & UX Specialist | **RESOLVED** |
-| **RISK-04** | **Unclear Paywall Boundaries for Simulated Features**<br>Gating simulated or partially built features behind a paywall violates Boundary 4 ("Do not bill for vapourware"). | **HIGH** | Product Strategy / Trust | Purged all vapourware claims from `EkagraPaywallSheet` and `PaywallScreen`. Advertised features strictly reflect shipped V1.0 capabilities. | Chief Architect / Growth | **RESOLVED** |
-| **RISK-05** | **Lack of Test Coverage Leading to Silent Regressions**<br>Only 1 widget test existed in repo. Refactoring core engines could break offline AI scoring or variable reward distribution. | **HIGH** | System Quality | Created 7 automated test suites across `test/unit/`, `test/resilience/`, `test/rules/`, and `test/helpers/`. | QA Specialist | **RESOLVED** |
+Active risks, their severity, mitigation status, and owner. Severity is **P0** (ship-blocking / data loss / legal exposure), **P1** (major, fix this sprint), **P2** (moderate, fix next sprint), **P3** (minor, backlog).
 
 ---
 
-## Risk Severity Definitions
-- **CRITICAL:** Causes total data loss, startup crashes, or illegal monetization/billing practices.
-- **HIGH:** Degrades core user loop (timer, task persistence, RSD safety violation).
-- **MEDIUM:** Secondary feature friction or minor visual inconsistency.
-- **LOW:** Micro-interaction polish or cosmetic issue.
+## RISK-01 — Persistence corruption blocks startup
+
+**Severity:** P0 → **RESOLVED**
+**Owner:** Tech Lead
+**Mitigation:** `SafeStore` per-record decoding + quarantine (ADR-001).
+
+One malformed record during `load()` used to prevent the app from starting. Now the app boots with whatever it can parse and quarantines the rest. Covered by `test/resilience_test.dart`.
+
+---
+
+## RISK-02 — Timer drift on app resume
+
+**Severity:** P1
+**Owner:** Tech Lead
+**Mitigation:** Not yet implemented.
+
+`FocusProvider` relies on an active `Timer.periodic`. On mobile OS, backgrounding or screen lock suspends isolates. Upon resume, the timer display drifts unless wall-clock deltas (`DateTime.now()` vs `endsAt`) are enforced.
+
+**Recommended fix:** On app resume, recompute remaining time from `endsAt - DateTime.now()` rather than trusting accumulated tick counts.
+
+---
+
+## RISK-03 — Billing for vapourware
+
+**Severity:** P0 → **RESOLVED**
+**Owner:** Chief Architect
+**Mitigation:** `FeatureFlags` maturity system + `isBillable` gate (ADR-002).
+
+Paywall previously advertised features that did not exist. Now non-billable features are free for everyone, and the paywall sheet advertises only `live` features.
+
+---
+
+## RISK-04 — Unclear paywall boundaries
+
+**Severity:** P0 → **RESOLVED**
+**Owner:** Chief Architect
+**Mitigation:** Honest monetization governance (ADR-004).
+
+All vapourware purged from paywall copy. Soft task cap wired. Trial tracking added.
+
+---
+
+## RISK-05 — No crash reporting
+
+**Severity:** P1
+**Owner:** Tech Lead
+**Mitigation:** Not yet implemented.
+
+No sink is attached in release, so nothing reaches a dashboard. Without it, RISK-01 recurrences will be invisible in the field.
+
+**Recommended fix:** Attach a crash-reporting sink (Sentry/Crashlytics) via `AnalyticsService.addSink()`. The seam exists.
+
+---
+
+## RISK-06 — HomeScreen choice overload
+
+**Severity:** P0 → **MITIGATED**
+**Owner:** Design Lead
+**Mitigation:** Design audit identified 24 visible action choices on HomeScreen (Rule 1: max 3). Streamlining in progress.
+
+The single biggest threat to the product working as designed: an audience whose core pathology is decision paralysis is being presented with 24 choices.
+
+---
+
+## RISK-07 — Naive Rule-15 validator
+
+**Severity:** P1
+**Owner:** QA Lead
+**Mitigation:** Documented exceptions in `test/design_rules_test.dart`.
+
+`RsdSafeCopy.isSafe()` uses substring matching, which flags negation contexts ("You're not lazy") and technical phrases ("broken down"). The validator needs word-boundary + negation-aware matching to stop producing false positives.
+
+---
+
+## RISK-08 — No real analytics sink
+
+**Severity:** P2
+**Owner:** Growth Lead
+**Mitigation:** Not yet implemented.
+
+All instrumentation is local-only. No funnel data reaches a dashboard until a sink is wired. The `AnalyticsService.addSink()` seam exists and accepts any vendor SDK.

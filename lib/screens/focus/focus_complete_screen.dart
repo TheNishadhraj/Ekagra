@@ -3,8 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../config/routes.dart';
 import '../../config/theme.dart';
+import '../../services/analytics_service.dart';
+import '../../services/growth_service.dart';
 
-class FocusCompleteScreen extends StatelessWidget {
+class FocusCompleteScreen extends StatefulWidget {
   final int minutes;
   final String? taskTitle;
 
@@ -15,7 +17,33 @@ class FocusCompleteScreen extends StatelessWidget {
   });
 
   @override
+  State<FocusCompleteScreen> createState() => _FocusCompleteScreenState();
+}
+
+class _FocusCompleteScreenState extends State<FocusCompleteScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Record once, on arrival — this screen is the definitive signal that a
+    // session actually finished rather than being abandoned.
+    final minutes = widget.minutes;
+    track(Ev.focusSessionCompleted, {
+      'actual_minutes': minutes,
+      'had_task': widget.taskTitle != null,
+    });
+    GrowthService.instance.recordFocusSession(minutes);
+
+    // Spec H10: a very long session is a hyperfocus episode worth knowing
+    // about — it predicts both high value and burnout risk.
+    if (minutes >= 120) {
+      track(Ev.hyperfocusDetected, {'duration_minutes': minutes});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final minutes = widget.minutes;
+    final taskTitle = widget.taskTitle;
     return Scaffold(
       backgroundColor: EkagraColors.background,
       body: SafeArea(

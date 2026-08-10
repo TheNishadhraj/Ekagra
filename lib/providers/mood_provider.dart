@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
 import '../models/mood_log_model.dart';
+import '../services/analytics_service.dart';
+import '../utils/safe_store.dart';
 
 class MoodProvider extends ChangeNotifier {
   static const _key = 'ekagra_mood_logs';
@@ -29,33 +31,12 @@ class MoodProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_key);
-      if (raw != null) {
-        try {
-          final list = jsonDecode(raw);
-          if (list is List) {
-            _logs = list
-                .whereType<Map<String, dynamic>>()
-                .map((e) {
-                  try {
-                    return MoodLog.fromJson(e);
-                  } catch (err) {
-                    debugPrint('MoodLog.fromJson error: $err');
-                    return null;
-                  }
-                })
-                .whereType<MoodLog>()
-                .toList();
-          }
-        } catch (e) {
-          debugPrint('MoodProvider load JSON error: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('MoodProvider load error: $e');
-    }
+    final prefs = await SharedPreferences.getInstance();
+    _logs = SafeStore.decodeList<MoodLog>(
+      raw: prefs.getString(_key),
+      key: _key,
+      fromJson: MoodLog.fromJson,
+    );
     _loaded = true;
     notifyListeners();
   }
@@ -65,19 +46,16 @@ class MoodProvider extends ChangeNotifier {
   }
 
   Future<void> log(MoodLevel mood) async {
+    track(Ev.moodCheckin, {'level': mood.name});
     _logs = [
       ..._logs,
       MoodLog(mood: mood, timestamp: DateTime.now()),
     ];
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _key,
-        jsonEncode(_logs.map((e) => e.toJson()).toList()),
-      );
-    } catch (e) {
-      debugPrint('MoodProvider log persist error: $e');
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _key,
+      jsonEncode(_logs.map((e) => e.toJson()).toList()),
+    );
     notifyListeners();
   }
 }
