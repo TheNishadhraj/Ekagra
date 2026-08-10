@@ -26,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   bool _showSearch = false;
+  bool _showCheckIn = false;
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
@@ -92,6 +93,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.brainDump),
+        backgroundColor: EkagraColors.primary,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text('Brain Dump 🧠', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           taskProvider.refreshOneThing(
@@ -141,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: EkagraTypography.encouragement,
               ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
 
-              const SizedBox(height: EkagraSpacing.lg),
+              const SizedBox(height: EkagraSpacing.md),
 
               // Day Progress Bar
               Container(
@@ -183,59 +190,85 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: EkagraSpacing.lg),
+              const SizedBox(height: EkagraSpacing.md),
 
-              // Energy & Mood Check-In Card
-              Container(
-                padding: const EdgeInsets.all(EkagraSpacing.lg),
-                decoration: BoxDecoration(
-                  color: EkagraColors.surface,
-                  borderRadius: BorderRadius.circular(EkagraRadius.lg),
-                  border: Border.all(
-                    color: EkagraColors.primaryLight.withValues(alpha: 0.3),
+              // Energy & Mood Quick Check-In Bar (Rule 1 Compliance)
+              InkWell(
+                onTap: () => setState(() => _showCheckIn = !_showCheckIn),
+                borderRadius: BorderRadius.circular(EkagraRadius.lg),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: EkagraSpacing.md, vertical: EkagraSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: EkagraColors.surface,
+                    borderRadius: BorderRadius.circular(EkagraRadius.lg),
+                    border: Border.all(
+                      color: EkagraColors.primaryLight.withValues(alpha: 0.3),
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'How\'s your energy?',
-                      style: EkagraTypography.bodyBold.copyWith(fontSize: 14),
-                    ),
-                    const SizedBox(height: EkagraSpacing.sm),
-                    EnergyGauge(
-                      selected: energyProvider.currentLevel,
-                      onSelected: (lvl) {
-                        energyProvider.setLevel(lvl);
-                        taskProvider.refreshOneThing(
-                          energy: lvl,
-                          mood: moodProvider.currentLevel,
-                        );
-                      },
-                    ),
-                    const Divider(height: EkagraSpacing.xl),
-                    Text(
-                      'How are you feeling?',
-                      style: EkagraTypography.bodyBold.copyWith(fontSize: 14),
-                    ),
-                    const SizedBox(height: EkagraSpacing.sm),
-                    MoodSelector(
-                      selected: moodProvider.currentLevel,
-                      onSelected: (m) {
-                        moodProvider.setLevel(m);
-                        taskProvider.refreshOneThing(
-                          energy: energyProvider.currentLevel,
-                          mood: m,
-                        );
-                      },
-                    ),
-                  ],
+                  child: Row(
+                    children: [
+                      Text(
+                        '⚡ ${energyProvider.currentLevel.name} · 💛 ${moodProvider.currentLevel.name}',
+                        style: EkagraTypography.bodyBold.copyWith(fontSize: 13),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _showCheckIn ? 'Close' : 'Adjust check-in',
+                        style: EkagraTypography.tiny.copyWith(color: EkagraColors.primary),
+                      ),
+                      Icon(
+                        _showCheckIn ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: EkagraColors.primary,
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
-              const SizedBox(height: EkagraSpacing.xl),
+              if (_showCheckIn) ...[
+                const SizedBox(height: EkagraSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.all(EkagraSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: EkagraColors.surface,
+                    borderRadius: BorderRadius.circular(EkagraRadius.lg),
+                    border: Border.all(
+                      color: EkagraColors.primaryLight.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      EnergyGauge(
+                        selected: energyProvider.currentLevel,
+                        onSelected: (lvl) {
+                          energyProvider.setLevel(lvl);
+                          taskProvider.refreshOneThing(
+                            energy: lvl,
+                            mood: moodProvider.currentLevel,
+                          );
+                        },
+                      ),
+                      const Divider(height: EkagraSpacing.xl),
+                      MoodSelector(
+                        selected: moodProvider.currentLevel,
+                        onSelected: (m) {
+                          moodProvider.setLevel(m);
+                          taskProvider.refreshOneThing(
+                            energy: energyProvider.currentLevel,
+                            mood: m,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
-              // YOUR ONE THING CARD
+              const SizedBox(height: EkagraSpacing.lg),
+
+              // PRIMARY CHOICE: YOUR ONE THING CARD
               Row(
                 children: [
                   Text(
@@ -247,13 +280,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: EkagraSpacing.sm),
+              const SizedBox(height: EkagraSpacing.xs),
 
               _buildOneThingCard(context, oneThing, taskProvider, energyProvider, moodProvider),
 
-              const SizedBox(height: EkagraSpacing.xl),
+              const SizedBox(height: EkagraSpacing.lg),
 
-              // UPCOMING TASKS GRID
+              // UPCOMING TASKS (Secondary List)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -264,13 +297,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  TextButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.brainDump);
-                    },
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: const Text('Add task'),
-                  ),
                 ],
               ),
               const SizedBox(height: EkagraSpacing.xs),
@@ -278,23 +304,18 @@ class _HomeScreenState extends State<HomeScreen> {
               if (upcomingTasks.isEmpty)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(EkagraSpacing.xl),
+                  padding: const EdgeInsets.all(EkagraSpacing.lg),
                   decoration: BoxDecoration(
                     color: EkagraColors.surface,
                     borderRadius: BorderRadius.circular(EkagraRadius.lg),
                   ),
                   child: Column(
                     children: [
-                      const Text('🌊', style: TextStyle(fontSize: 32)),
+                      const Text('🌊', style: TextStyle(fontSize: 28)),
                       const SizedBox(height: EkagraSpacing.xs),
                       Text(
                         'Your list is clear! Enjoy the calm',
                         style: EkagraTypography.bodyBold,
-                      ),
-                      const SizedBox(height: EkagraSpacing.xs),
-                      Text(
-                        'Or tap + to dump what\'s on your mind.',
-                        style: EkagraTypography.caption,
                       ),
                     ],
                   ),
@@ -320,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
 
-              const SizedBox(height: EkagraSpacing.xl),
+              const SizedBox(height: EkagraSpacing.lg),
 
               // TODAY'S STATS (SHAME-FREE)
               Text(
@@ -374,7 +395,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
 
-              const SizedBox(height: EkagraSpacing.xxl),
+              const SizedBox(height: 80),
             ],
           ),
         ),
@@ -402,7 +423,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Column(
           children: [
-            const Text('🎯', style: TextStyle(fontSize: 44)),
+            const Text('🎯', style: TextStyle(fontSize: 40)),
             const SizedBox(height: EkagraSpacing.sm),
             Text('No active tasks!', style: EkagraTypography.h3),
             const SizedBox(height: 4),

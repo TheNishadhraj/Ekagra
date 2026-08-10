@@ -12,12 +12,14 @@ import '../services/ai_service.dart';
 class TaskProvider extends ChangeNotifier {
   static const _tasksKey = 'ekagra_tasks';
 
-  final AiService _ai = AiService();
+  final AiService _ai;
   List<TaskModel> _tasks = [];
   TaskModel? _oneThing;
   final Set<String> _skippedOneThingIds = {};
   int _skipCount = 0;
   bool _loaded = false;
+
+  TaskProvider({AiService? aiService}) : _ai = aiService ?? AiService();
 
   List<TaskModel> get tasks =>
       _tasks.where((t) => t.isActive && !t.isDeleted).toList();
@@ -51,13 +53,32 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_tasksKey);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _tasks = list
-          .map((e) => TaskModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_tasksKey);
+      if (raw != null) {
+        try {
+          final list = jsonDecode(raw);
+          if (list is List) {
+            _tasks = list
+                .whereType<Map<String, dynamic>>()
+                .map((e) {
+                  try {
+                    return TaskModel.fromJson(e);
+                  } catch (err) {
+                    debugPrint('TaskModel.fromJson item parse error: $err');
+                    return null;
+                  }
+                })
+                .whereType<TaskModel>()
+                .toList();
+          }
+        } catch (e) {
+          debugPrint('TaskProvider load failed to parse JSON: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('TaskProvider load storage error: $e');
     }
     _loaded = true;
     refreshOneThing();
@@ -65,11 +86,15 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _tasksKey,
-      jsonEncode(_tasks.map((t) => t.toJson()).toList()),
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _tasksKey,
+        jsonEncode(_tasks.map((t) => t.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('TaskProvider _persist error: $e');
+    }
   }
 
   Future<TaskModel> addTask(

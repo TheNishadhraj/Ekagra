@@ -29,13 +29,32 @@ class MoodProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _logs = list
-          .map((e) => MoodLog.fromJson(e as Map<String, dynamic>))
-          .toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw != null) {
+        try {
+          final list = jsonDecode(raw);
+          if (list is List) {
+            _logs = list
+                .whereType<Map<String, dynamic>>()
+                .map((e) {
+                  try {
+                    return MoodLog.fromJson(e);
+                  } catch (err) {
+                    debugPrint('MoodLog.fromJson error: $err');
+                    return null;
+                  }
+                })
+                .whereType<MoodLog>()
+                .toList();
+          }
+        } catch (e) {
+          debugPrint('MoodProvider load JSON error: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('MoodProvider load error: $e');
     }
     _loaded = true;
     notifyListeners();
@@ -50,11 +69,15 @@ class MoodProvider extends ChangeNotifier {
       ..._logs,
       MoodLog(mood: mood, timestamp: DateTime.now()),
     ];
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(_logs.map((e) => e.toJson()).toList()),
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        jsonEncode(_logs.map((e) => e.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('MoodProvider log persist error: $e');
+    }
     notifyListeners();
   }
 }

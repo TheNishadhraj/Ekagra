@@ -128,7 +128,7 @@ class PaywallScreen extends StatelessWidget {
               const SizedBox(height: EkagraSpacing.xs),
 
               Text(
-                'Cancel anytime in Settings with 1 tap. No tricks.',
+                'Cancel anytime in device Settings > Subscriptions. No tricks.',
                 style: EkagraTypography.caption.copyWith(
                   color: EkagraColors.textTertiary,
                 ),

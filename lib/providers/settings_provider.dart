@@ -31,35 +31,53 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString(_userKey);
-    if (userJson != null) {
-      _user = UserModel.fromJson(
-        jsonDecode(userJson) as Map<String, dynamic>,
-      );
-    } else {
-      final complete = prefs.getBool(_onboardingKey) ?? false;
-      _user = _user.copyWith(onboardingComplete: complete);
-    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString(_userKey);
+      if (userJson != null) {
+        try {
+          final map = jsonDecode(userJson);
+          if (map is Map<String, dynamic>) {
+            _user = UserModel.fromJson(map);
+          }
+        } catch (e) {
+          debugPrint('SettingsProvider user JSON parse error: $e');
+        }
+      } else {
+        final complete = prefs.getBool(_onboardingKey) ?? false;
+        _user = _user.copyWith(onboardingComplete: complete);
+      }
 
-    final menuJson = prefs.getString(_menuKey);
-    if (menuJson != null) {
-      _menu = DopamineMenu.fromJson(
-        jsonDecode(menuJson) as Map<String, dynamic>,
-      );
-    }
+      final menuJson = prefs.getString(_menuKey);
+      if (menuJson != null) {
+        try {
+          final map = jsonDecode(menuJson);
+          if (map is Map<String, dynamic>) {
+            _menu = DopamineMenu.fromJson(map);
+          }
+        } catch (e) {
+          debugPrint('SettingsProvider menu JSON parse error: $e');
+        }
+      }
 
-    _darkMode = prefs.getBool('ekagra_dark_mode') ?? false;
+      _darkMode = prefs.getBool('ekagra_dark_mode') ?? false;
+    } catch (e) {
+      debugPrint('SettingsProvider load error: $e');
+    }
     _loaded = true;
     notifyListeners();
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, jsonEncode(_user.toJson()));
-    await prefs.setString(_menuKey, jsonEncode(_menu.toJson()));
-    await prefs.setBool(_onboardingKey, _user.onboardingComplete);
-    await prefs.setBool('ekagra_dark_mode', _darkMode);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_userKey, jsonEncode(_user.toJson()));
+      await prefs.setString(_menuKey, jsonEncode(_menu.toJson()));
+      await prefs.setBool(_onboardingKey, _user.onboardingComplete);
+      await prefs.setBool('ekagra_dark_mode', _darkMode);
+    } catch (e) {
+      debugPrint('SettingsProvider _persist error: $e');
+    }
   }
 
   Future<void> setAdhdTraits(List<AdhdTrait> traits) async {
@@ -118,7 +136,10 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> enablePro() async {
-    _user = _user.copyWith(isPro: true);
+    _user = _user.copyWith(
+      isPro: true,
+      trialStartedAt: _user.trialStartedAt ?? DateTime.now(),
+    );
     await _persist();
     notifyListeners();
   }

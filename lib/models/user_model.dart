@@ -143,6 +143,7 @@ class UserModel {
   final bool paywallSeen;
   final bool isPro;
   final bool isAnonymous;
+  final DateTime? trialStartedAt;
   final DateTime? lastActiveAt;
   final int totalActiveDays;
   final int currentConsecutiveDays;
@@ -162,6 +163,7 @@ class UserModel {
     this.paywallSeen = false,
     this.isPro = false,
     this.isAnonymous = true,
+    this.trialStartedAt,
     this.lastActiveAt,
     this.totalActiveDays = 0,
     this.currentConsecutiveDays = 0,
@@ -178,6 +180,18 @@ class UserModel {
 
   String get name => displayName ?? 'friend';
 
+  bool get isTrialActive {
+    if (trialStartedAt == null) return false;
+    final diff = DateTime.now().difference(trialStartedAt!).inDays;
+    return diff < 7;
+  }
+
+  int get trialDaysRemaining {
+    if (trialStartedAt == null) return 0;
+    final elapsed = DateTime.now().difference(trialStartedAt!).inDays;
+    return (7 - elapsed).clamp(0, 7);
+  }
+
   UserModel copyWith({
     String? id,
     String? displayName,
@@ -192,6 +206,7 @@ class UserModel {
     bool? paywallSeen,
     bool? isPro,
     bool? isAnonymous,
+    DateTime? trialStartedAt,
     DateTime? lastActiveAt,
     int? totalActiveDays,
     int? currentConsecutiveDays,
@@ -211,6 +226,7 @@ class UserModel {
       paywallSeen: paywallSeen ?? this.paywallSeen,
       isPro: isPro ?? this.isPro,
       isAnonymous: isAnonymous ?? this.isAnonymous,
+      trialStartedAt: trialStartedAt ?? this.trialStartedAt,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       totalActiveDays: totalActiveDays ?? this.totalActiveDays,
       currentConsecutiveDays:
@@ -233,6 +249,7 @@ class UserModel {
         'paywallSeen': paywallSeen,
         'isPro': isPro,
         'isAnonymous': isAnonymous,
+        'trialStartedAt': trialStartedAt?.toIso8601String(),
         'lastActiveAt': lastActiveAt?.toIso8601String(),
         'totalActiveDays': totalActiveDays,
         'currentConsecutiveDays': currentConsecutiveDays,
@@ -241,7 +258,7 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? 'guest',
       displayName: json['displayName'] as String?,
       email: json['email'] as String?,
       adhdTraits: (json['adhdTraits'] as List<dynamic>?)
@@ -261,12 +278,17 @@ class UserModel {
       paywallSeen: json['paywallSeen'] as bool? ?? false,
       isPro: json['isPro'] as bool? ?? false,
       isAnonymous: json['isAnonymous'] as bool? ?? true,
+      trialStartedAt: json['trialStartedAt'] != null
+          ? DateTime.parse(json['trialStartedAt'] as String)
+          : null,
       lastActiveAt: json['lastActiveAt'] != null
           ? DateTime.parse(json['lastActiveAt'] as String)
           : null,
       totalActiveDays: json['totalActiveDays'] as int? ?? 0,
       currentConsecutiveDays: json['currentConsecutiveDays'] as int? ?? 0,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : DateTime.now(),
     );
   }
 }

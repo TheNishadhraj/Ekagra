@@ -10,11 +10,13 @@ import '../services/reward_engine.dart';
 class RewardProvider extends ChangeNotifier {
   static const _key = 'ekagra_rewards';
 
-  final RewardEngine _engine = RewardEngine();
+  final RewardEngine _engine;
   DopamineMenu _menu = DopamineMenu.defaults;
   List<DopamineReward> _history = [];
   DopamineReward? _latest;
   bool _loaded = false;
+
+  RewardProvider({RewardEngine? engine}) : _engine = engine ?? RewardEngine();
 
   List<DopamineReward> get history => List.unmodifiable(_history);
   DopamineReward? get latest => _latest;
@@ -35,24 +37,47 @@ class RewardProvider extends ChangeNotifier {
   int get todayClaimedCount => earnedToday;
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _history = list
-          .map((e) => DopamineReward.fromJson(e as Map<String, dynamic>))
-          .toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw != null) {
+        try {
+          final list = jsonDecode(raw);
+          if (list is List) {
+            _history = list
+                .whereType<Map<String, dynamic>>()
+                .map((e) {
+                  try {
+                    return DopamineReward.fromJson(e);
+                  } catch (err) {
+                    debugPrint('DopamineReward.fromJson error: $err');
+                    return null;
+                  }
+                })
+                .whereType<DopamineReward>()
+                .toList();
+          }
+        } catch (e) {
+          debugPrint('RewardProvider load JSON error: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('RewardProvider load error: $e');
     }
     _loaded = true;
     notifyListeners();
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(_history.map((e) => e.toJson()).toList()),
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        jsonEncode(_history.map((e) => e.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('RewardProvider _persist error: $e');
+    }
   }
 
   DopamineReward generateRandomReward() {
@@ -66,7 +91,6 @@ class RewardProvider extends ChangeNotifier {
   }
 
   Future<void> recordTaskCompletion(String taskId) async {
-    // Variable ratio reinforcement (1 to 4 tasks)
     final reward = _engine.roll(
       menu: _menu,
       relatedTaskId: taskId,
