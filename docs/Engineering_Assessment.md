@@ -127,7 +127,9 @@ Ordered by risk retired per day spent.
 
 ## 5. Standards now enforced mechanically
 
-`.github/workflows/ci.yml` on every push:
+`ci/github-workflow-ci.yml` — **one manual step to activate**, see `ci/README.md`.
+The pushing token lacks GitHub's `workflows` permission, so it cannot live at
+`.github/workflows/` until a human moves it. Once active, on every push:
 
 | Gate | Rationale |
 |---|---|
