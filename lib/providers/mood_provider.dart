@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
 import '../models/mood_log_model.dart';
+import '../services/analytics_service.dart';
+import '../utils/safe_store.dart';
 
 class MoodProvider extends ChangeNotifier {
   static const _key = 'ekagra_mood_logs';
@@ -30,13 +32,11 @@ class MoodProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _logs = list
-          .map((e) => MoodLog.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
+    _logs = SafeStore.decodeList<MoodLog>(
+      raw: prefs.getString(_key),
+      key: _key,
+      fromJson: MoodLog.fromJson,
+    );
     _loaded = true;
     notifyListeners();
   }
@@ -46,6 +46,7 @@ class MoodProvider extends ChangeNotifier {
   }
 
   Future<void> log(MoodLevel mood) async {
+    track(Ev.moodCheckin, {'level': mood.name});
     _logs = [
       ..._logs,
       MoodLog(mood: mood, timestamp: DateTime.now()),

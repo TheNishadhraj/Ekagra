@@ -11,6 +11,7 @@ import '../screens/onboarding/dopamine_menu_setup_screen.dart';
 import '../screens/onboarding/notification_permission_screen.dart';
 import '../screens/onboarding/paywall_screen.dart';
 import '../screens/rewards/reward_reveal_screen.dart';
+import '../screens/settings/growth_dashboard_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/shared/main_shell.dart';
 import '../screens/someday/someday_list_screen.dart';
@@ -36,6 +37,7 @@ class AppRoutes {
   static const bodyDouble = '/body-double';
   static const someday = '/someday';
   static const settings = '/settings';
+  static const growthDashboard = '/settings/growth';
 
   static Route<dynamic> onGenerateRoute(RouteSettings routeSettings) {
     switch (routeSettings.name) {
@@ -76,6 +78,8 @@ class AppRoutes {
         return _slide(const SomedayListScreen(), routeSettings);
       case settings:
         return _slide(const SettingsScreen(), routeSettings);
+      case growthDashboard:
+        return _slide(const GrowthDashboardScreen(), routeSettings);
       case home:
       default:
         return _fade(const HomeScreen(), routeSettings);

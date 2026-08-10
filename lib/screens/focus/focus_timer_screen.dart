@@ -7,7 +7,11 @@ import '../../models/task_model.dart';
 import '../../providers/focus_provider.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/task_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/growth_service.dart';
+import '../../services/monetization_service.dart';
 import '../../widgets/focus_ring.dart';
+import '../../widgets/pro_gate.dart';
 import 'ambient_player.dart';
 
 class FocusTimerScreen extends StatefulWidget {
@@ -166,15 +170,45 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [15, 25, 45, 60].map((mins) {
+                    children: [5, 15, 25, 45, 60].map((mins) {
                       final isSel = _selectedMinutes == mins;
+                      // Spec O1: free tier gets the default 25 only. The 5
+                      // minute option is deliberately Pro-gated too — it is
+                      // the highest-value duration for a low-capacity day,
+                      // which is exactly when someone decides this app is
+                      // worth paying for.
+                      final locked = !MonetizationService.instance.isPro &&
+                          mins != 25;
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: ChoiceChip(
-                          label: Text('$mins'),
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('$mins'),
+                              if (locked) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 12,
+                                  color: EkagraColors.textTertiary,
+                                ),
+                              ],
+                            ],
+                          ),
                           selected: isSel,
-                          selectedColor: EkagraColors.primary.withValues(alpha: 0.2),
-                          onSelected: (_) {
+                          selectedColor:
+                              EkagraColors.primary.withValues(alpha: 0.2),
+                          onSelected: (_) async {
+                            if (locked) {
+                              final unlocked = await ProGate.guard(
+                                context,
+                                feature: ProFeature.allFocusDurations,
+                                trigger: PaywallTrigger.focusDuration,
+                              );
+                              if (!unlocked) return;
+                            }
+                            if (!mounted) return;
                             setState(() => _selectedMinutes = mins);
                           },
                         ),
@@ -194,7 +228,17 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
                         height: 56,
                         child: ElevatedButton(
                           onPressed: () {
-                            focus.startTimer(Duration(minutes: _selectedMinutes));
+                            focus.startTimer(
+                              Duration(minutes: _selectedMinutes),
+                            );
+                            track(Ev.focusSessionStarted, {
+                              'duration': _selectedMinutes,
+                              'ambient': _ambient.name,
+                              'has_task': currentTask != null,
+                            });
+                            GrowthService.instance.completeStep(
+                              ActivationStep.firstFocusStarted,
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: EkagraColors.primary,

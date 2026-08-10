@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/constants.dart';
 import '../models/dopamine_menu_model.dart';
 import '../models/user_model.dart';
+import '../utils/safe_store.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const _userKey = 'ekagra_user';
@@ -32,22 +33,34 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString(_userKey);
-    if (userJson != null) {
-      _user = UserModel.fromJson(
-        jsonDecode(userJson) as Map<String, dynamic>,
-      );
+
+    // A corrupt user record must not block startup. We fall back to the
+    // guest profile but preserve the onboarding flag, so a returning user
+    // is not dumped back into the welcome flow they already completed.
+    final userMap = SafeStore.decodeObject(
+      raw: prefs.getString(_userKey),
+      key: _userKey,
+    );
+    final restored = userMap == null
+        ? null
+        : SafeStore.tryBuild(() => UserModel.fromJson(userMap), key: _userKey);
+
+    if (restored != null) {
+      _user = restored;
     } else {
       final complete = prefs.getBool(_onboardingKey) ?? false;
       _user = _user.copyWith(onboardingComplete: complete);
     }
 
-    final menuJson = prefs.getString(_menuKey);
-    if (menuJson != null) {
-      _menu = DopamineMenu.fromJson(
-        jsonDecode(menuJson) as Map<String, dynamic>,
-      );
-    }
+    final menuMap = SafeStore.decodeObject(
+      raw: prefs.getString(_menuKey),
+      key: _menuKey,
+    );
+    final menu = menuMap == null
+        ? null
+        : SafeStore.tryBuild(() => DopamineMenu.fromJson(menuMap),
+            key: _menuKey);
+    if (menu != null) _menu = menu;
 
     _darkMode = prefs.getBool('ekagra_dark_mode') ?? false;
     _loaded = true;
@@ -118,7 +131,11 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> enablePro() async {
-    _user = _user.copyWith(isPro: true);
+    // Record the trial start time on first upgrade so the legacy `isPro`
+    // path can surface "X days left" and detect expiry. Leaving it null
+    // preserves the old behaviour for paid installs that pre-date this field.
+    final trialStart = _user.trialStartedAt ?? DateTime.now();
+    _user = _user.copyWith(isPro: true, trialStartedAt: trialStart);
     await _persist();
     notifyListeners();
   }

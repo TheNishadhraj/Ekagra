@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/dopamine_menu_model.dart';
 import '../models/dopamine_reward_model.dart';
 import '../services/reward_engine.dart';
+import '../utils/safe_store.dart';
 
 class RewardProvider extends ChangeNotifier {
   static const _key = 'ekagra_rewards';
@@ -36,13 +37,11 @@ class RewardProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _history = list
-          .map((e) => DopamineReward.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
+    _history = SafeStore.decodeList<DopamineReward>(
+      raw: prefs.getString(_key),
+      key: _key,
+      fromJson: DopamineReward.fromJson,
+    );
     _loaded = true;
     notifyListeners();
   }

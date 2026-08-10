@@ -143,10 +143,15 @@ class UserModel {
   final bool paywallSeen;
   final bool isPro;
   final bool isAnonymous;
+  final DateTime? trialStartedAt;
   final DateTime? lastActiveAt;
   final int totalActiveDays;
   final int currentConsecutiveDays;
   final DateTime createdAt;
+
+  /// Default trial length in days. Kept here so the legacy `isPro` path
+  /// and the newer [MonetizationService] path agree on duration.
+  static const int trialDays = 7;
 
   const UserModel({
     required this.id,
@@ -162,6 +167,7 @@ class UserModel {
     this.paywallSeen = false,
     this.isPro = false,
     this.isAnonymous = true,
+    this.trialStartedAt,
     this.lastActiveAt,
     this.totalActiveDays = 0,
     this.currentConsecutiveDays = 0,
@@ -178,6 +184,22 @@ class UserModel {
 
   String get name => displayName ?? 'friend';
 
+  /// Whether the legacy `isPro` trial is currently within its window.
+  /// Returns false if the user is not on a trial (paid, or never started).
+  bool get isTrialActive {
+    final start = trialStartedAt;
+    if (start == null || isAnonymous) return false;
+    return DateTime.now().difference(start).inDays < trialDays;
+  }
+
+  /// Whole days remaining on the legacy trial. Zero once expired.
+  int get trialDaysRemaining {
+    final start = trialStartedAt;
+    if (start == null || isAnonymous) return 0;
+    final elapsed = DateTime.now().difference(start).inDays;
+    return (trialDays - elapsed).clamp(0, trialDays);
+  }
+
   UserModel copyWith({
     String? id,
     String? displayName,
@@ -192,6 +214,7 @@ class UserModel {
     bool? paywallSeen,
     bool? isPro,
     bool? isAnonymous,
+    DateTime? trialStartedAt,
     DateTime? lastActiveAt,
     int? totalActiveDays,
     int? currentConsecutiveDays,
@@ -211,6 +234,7 @@ class UserModel {
       paywallSeen: paywallSeen ?? this.paywallSeen,
       isPro: isPro ?? this.isPro,
       isAnonymous: isAnonymous ?? this.isAnonymous,
+      trialStartedAt: trialStartedAt ?? this.trialStartedAt,
       lastActiveAt: lastActiveAt ?? this.lastActiveAt,
       totalActiveDays: totalActiveDays ?? this.totalActiveDays,
       currentConsecutiveDays:
@@ -233,6 +257,7 @@ class UserModel {
         'paywallSeen': paywallSeen,
         'isPro': isPro,
         'isAnonymous': isAnonymous,
+        'trialStartedAt': trialStartedAt?.toIso8601String(),
         'lastActiveAt': lastActiveAt?.toIso8601String(),
         'totalActiveDays': totalActiveDays,
         'currentConsecutiveDays': currentConsecutiveDays,
@@ -261,6 +286,9 @@ class UserModel {
       paywallSeen: json['paywallSeen'] as bool? ?? false,
       isPro: json['isPro'] as bool? ?? false,
       isAnonymous: json['isAnonymous'] as bool? ?? true,
+      trialStartedAt: json['trialStartedAt'] != null
+          ? DateTime.parse(json['trialStartedAt'] as String)
+          : null,
       lastActiveAt: json['lastActiveAt'] != null
           ? DateTime.parse(json['lastActiveAt'] as String)
           : null,
