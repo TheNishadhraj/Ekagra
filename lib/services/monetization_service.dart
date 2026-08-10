@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
+import '../config/feature_flags.dart';
 import 'analytics_service.dart';
 import 'experiment_service.dart';
 
@@ -26,6 +27,42 @@ enum ProFeature {
 }
 
 extension ProFeatureX on ProFeature {
+  /// How real this feature actually is. See [FeatureFlags].
+  FeatureMaturity get maturity {
+    switch (this) {
+      case ProFeature.bodyDoubling:
+        return FeatureFlags.bodyDoubling;
+      case ProFeature.aiTaskSelection:
+        return FeatureFlags.aiTaskSelection;
+      case ProFeature.aiTaskBreakdown:
+        return FeatureFlags.aiTaskBreakdown;
+      case ProFeature.widgets:
+        return FeatureFlags.widgets;
+      case ProFeature.dataExport:
+        return FeatureFlags.dataExport;
+      case ProFeature.unlimitedTasks:
+        return FeatureFlags.unlimitedTasks;
+      case ProFeature.allFocusDurations:
+        return FeatureFlags.allFocusDurations;
+      case ProFeature.unlimitedDopamineMenu:
+        return FeatureFlags.unlimitedDopamineMenu;
+      case ProFeature.allAmbientSounds:
+        return FeatureFlags.allAmbientSounds;
+      case ProFeature.energyMoodInsights:
+        return FeatureFlags.energyMoodInsights;
+      case ProFeature.customThemes:
+        return FeatureFlags.customThemes;
+      case ProFeature.detailedStats:
+        return FeatureFlags.detailedStats;
+    }
+  }
+
+  /// Whether it is lawful and honest to put this behind a paywall.
+  ///
+  /// Charging for a feature whose data is fabricated is a misrepresentation,
+  /// not a product decision. This getter is the enforcement point.
+  bool get isBillable => maturity == FeatureMaturity.live;
+
   /// User-facing name. Used in gate sheets — never show an enum to a human.
   String get label {
     switch (this) {
@@ -108,6 +145,37 @@ enum PaywallTrigger {
 
 extension PaywallTriggerX on PaywallTrigger {
   String get id => name;
+
+  /// The feature this trigger is trying to sell, where there is one.
+  /// Used to refuse paywalls for features that are not billable.
+  ProFeature? get backingFeature {
+    switch (this) {
+      case PaywallTrigger.taskLimit:
+        return ProFeature.unlimitedTasks;
+      case PaywallTrigger.aiSelection:
+        return ProFeature.aiTaskSelection;
+      case PaywallTrigger.bodyDoubling:
+        return ProFeature.bodyDoubling;
+      case PaywallTrigger.widgets:
+        return ProFeature.widgets;
+      case PaywallTrigger.focusDuration:
+        return ProFeature.allFocusDurations;
+      case PaywallTrigger.ambientSounds:
+        return ProFeature.allAmbientSounds;
+      case PaywallTrigger.taskBreakdown:
+        return ProFeature.aiTaskBreakdown;
+      case PaywallTrigger.insights:
+        return ProFeature.energyMoodInsights;
+      case PaywallTrigger.dataExport:
+        return ProFeature.dataExport;
+      // Generic surfaces sell the bundle, not one feature.
+      case PaywallTrigger.onboarding:
+      case PaywallTrigger.settings:
+      case PaywallTrigger.winbackOffer:
+      case PaywallTrigger.trialExpired:
+        return null;
+    }
+  }
 
   /// Hard gates block the action. Soft gates are dismissible invitations.
   /// Only gates protecting a genuinely metered resource should be hard —
@@ -229,7 +297,15 @@ class MonetizationService extends ChangeNotifier {
   }
 
   /// Whether a given feature is unlocked right now.
-  bool hasAccess(ProFeature feature) => isPro;
+  ///
+  /// A feature that is not [ProFeatureX.isBillable] is open to everyone,
+  /// regardless of subscription state. We do not take money for simulated
+  /// data, so we do not lock it either — the paywall and the product stay
+  /// consistent with each other by construction rather than by discipline.
+  bool hasAccess(ProFeature feature) {
+    if (!feature.isBillable) return true;
+    return isPro;
+  }
 
   /// Human-readable entitlement line for Settings.
   String get statusLabel {
@@ -355,6 +431,20 @@ class MonetizationService extends ChangeNotifier {
   /// here is retention we keep.
   bool shouldShowPaywall(PaywallTrigger trigger) {
     if (isPro) return false;
+
+    // Hard stop: never raise a paywall for a feature we cannot honestly
+    // bill for. This catches the case where someone adds a trigger for a
+    // half-built feature and forgets the flag.
+    final backing = trigger.backingFeature;
+    if (backing != null && !backing.isBillable) {
+      track(Ev.paywallSuppressed, {
+        'trigger': trigger.id,
+        'reason': 'feature_not_billable',
+        'maturity': backing.maturity.name,
+      });
+      return false;
+    }
+
     _rolloverPaywallDayIfNeeded();
 
     // Hard gates always show: the user has hit a real, metered ceiling and

@@ -1,0 +1,99 @@
+name: CI
+
+# The spec asks every PR to carry a manual "Rule Compliance" checkbox.
+# Manual checkboxes decay: they get ticked without being checked, especially
+# under deadline. This pipeline enforces the same rules mechanically, so
+# compliance is a property of the repository rather than of anyone's memory.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+# A new push to the same branch makes the previous run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: '3.35.0'
+
+jobs:
+  quality:
+    name: Analyze, test & enforce design rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      # Formatting is not taste, it is diff hygiene. Unformatted code makes
+      # every future review noisier than it needs to be.
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      # `--fatal-infos` is deliberate. The repo has a clean analyzer baseline
+      # today; the cheapest moment to keep it clean is now, not after 200
+      # warnings have accumulated and everyone has learned to scroll past them.
+      - name: Static analysis
+        run: flutter analyze --fatal-infos
+
+      - name: Tests
+        run: flutter test --reporter expanded
+
+      # Belt and braces: design_rules_test.dart already covers these, but a
+      # grep-level gate also catches violations in files the Dart tests do
+      # not scan (docs, generated code, platform folders).
+      - name: Guard against red in UI code
+        run: |
+          if grep -rnE 'Colors\.red|0xFFFF0000' lib/ --include='*.dart'; then
+            echo "::error::Rule 3 violation — red is reserved. Use EkagraColors.error (warm coral)."
+            exit 1
+          fi
+          echo "Rule 3 OK"
+
+      - name: Guard against debug leftovers
+        run: |
+          if grep -rnE '^\s*print\(' lib/ --include='*.dart'; then
+            echo "::error::Use debugPrint or the analytics sink, not print()."
+            exit 1
+          fi
+          echo "No stray print() calls"
+
+  build:
+    name: Build Android (release-mode smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only gate merges on a real compile; skip the cost on every WIP push.
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # A release build catches tree-shaking, const-eval and R8 problems that
+      # debug builds and `flutter test` never surface.
+      - name: Build release APK
+        run: flutter build apk --release --no-shrink

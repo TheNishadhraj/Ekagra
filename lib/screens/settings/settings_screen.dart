@@ -337,7 +337,7 @@ class _AnalyticsOptOutTileState extends State<_AnalyticsOptOutTile> {
     return SwitchListTile(
       title: const Text('Share anonymous usage data'),
       subtitle: const Text(
-        'Helps us find what is broken. Never sold. Stays on your device in this build.',
+        'Helps us find rough edges. Never sold. Stays on your device in this build.',
       ),
       value: AnalyticsService.instance.enabled,
       activeThumbColor: EkagraColors.primary,

@@ -22,7 +22,9 @@ void main() {
     test('a new user is free and has no Pro access', () {
       expect(money.isPro, isFalse);
       expect(money.status, EntitlementStatus.free);
-      for (final f in ProFeature.values) {
+      // Only *billable* features are gated. Simulated features stay open
+      // to everyone, because we do not sell them.
+      for (final f in ProFeature.values.where((f) => f.isBillable)) {
         expect(money.hasAccess(f), isFalse, reason: '${f.name} must be gated');
       }
     });
@@ -47,7 +49,7 @@ void main() {
 
       expect(money.isTrialExpired, isTrue);
       expect(money.isPro, isFalse);
-      expect(money.hasAccess(ProFeature.bodyDoubling), isFalse);
+      expect(money.hasAccess(ProFeature.unlimitedTasks), isFalse);
     });
 
     test('purchasing from a trial emits trial_converted', () async {
@@ -98,16 +100,18 @@ void main() {
     });
 
     test('a soft gate respects the cooldown window', () async {
-      expect(money.shouldShowPaywall(PaywallTrigger.bodyDoubling), isTrue);
-      await money.recordPaywallShown(PaywallTrigger.bodyDoubling);
+      // ambientSounds is billable + soft, so it exercises the governor
+      // rather than the not-billable short circuit.
+      expect(money.shouldShowPaywall(PaywallTrigger.ambientSounds), isTrue);
+      await money.recordPaywallShown(PaywallTrigger.ambientSounds);
 
-      expect(money.shouldShowPaywall(PaywallTrigger.widgets), isFalse);
+      expect(money.shouldShowPaywall(PaywallTrigger.insights), isFalse);
       expect(sink.sawEvent(Ev.paywallSuppressed), isTrue);
     });
 
     test('never exceeds the daily cap', () async {
-      await money.recordPaywallShown(PaywallTrigger.bodyDoubling);
-      await money.recordPaywallShown(PaywallTrigger.widgets);
+      await money.recordPaywallShown(PaywallTrigger.ambientSounds);
+      await money.recordPaywallShown(PaywallTrigger.insights);
 
       expect(
         AnalyticsService.instance.lifetimeCount(Ev.paywallShown),
@@ -117,7 +121,7 @@ void main() {
     });
 
     test('retires a trigger after repeated dismissals', () async {
-      const trigger = PaywallTrigger.bodyDoubling;
+      const trigger = PaywallTrigger.ambientSounds;
       for (var i = 0; i < MonetizationService.dismissalsBeforeBackoff; i++) {
         await money.recordPaywallDismissed(trigger);
       }

@@ -145,11 +145,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
                       ],
                     ),
                     const SizedBox(height: EkagraSpacing.sm),
-                    _featureRow('⭐ Unlimited tasks + AI picks', true),
+                    // Only shippable, billable features may appear on a
+                    // payment screen. Body doubling and widgets are
+                    // deliberately absent until they actually exist.
+                    _featureRow('⭐ Unlimited tasks', true),
+                    _featureRow('⭐ Every focus length (5-60 min)', true),
                     _featureRow('⭐ Full dopamine menu & rare drops', true),
-                    _featureRow('⭐ Body doubling & ambient rooms', true),
-                    _featureRow('⭐ Widgets & Dyslexia font options', true),
-                    _featureRow('⭐ Custom themes & stats', true),
+                    _featureRow('⭐ All ambient sounds', true),
+                    _featureRow('⭐ Custom themes & detailed stats', true),
                   ],
                 ),
               ).animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1, end: 0),

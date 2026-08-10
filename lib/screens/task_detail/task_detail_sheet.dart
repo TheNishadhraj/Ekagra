@@ -95,7 +95,7 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
     });
     messenger.showSnackBar(
       const SnackBar(
-        content: Text('🔨 Task broken down into small micro-steps!'),
+        content: Text('🔨 Split into small micro-steps!'),
         backgroundColor: EkagraColors.primary,
       ),
     );

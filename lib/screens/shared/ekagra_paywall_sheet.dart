@@ -118,15 +118,20 @@ class _EkagraPaywallSheetState extends State<EkagraPaywallSheet> {
   /// Only the features relevant to what the user just hit, plus the two
   /// universal ones. A 12-row feature grid is cognitive load, and this
   /// audience is the least equipped to absorb it.
+  /// Every feature listed here must be billable. Advertising a simulated
+  /// feature on a payment screen is the misrepresentation — listing it is
+  /// the act, not charging for it.
   List<ProFeature> get _relevantFeatures {
     final primary = widget.feature;
     final base = <ProFeature>[
       ProFeature.unlimitedTasks,
-      ProFeature.aiTaskSelection,
-      ProFeature.bodyDoubling,
+      ProFeature.allFocusDurations,
+      ProFeature.unlimitedDopamineMenu,
+      ProFeature.detailedStats,
     ];
-    if (primary == null) return base;
-    return [primary, ...base.where((f) => f != primary)].take(3).toList();
+    final candidates =
+        primary == null ? base : [primary, ...base.where((f) => f != primary)];
+    return candidates.where((f) => f.isBillable).take(3).toList();
   }
 
   Future<void> _startTrial() async {

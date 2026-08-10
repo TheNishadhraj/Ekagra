@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../config/feature_flags.dart';
 import '../../config/theme.dart';
 import '../../services/analytics_service.dart';
-import '../../services/monetization_service.dart';
-import '../../widgets/pro_gate.dart';
 
 class BodyDoubleScreen extends StatefulWidget {
   const BodyDoubleScreen({super.key});
@@ -14,22 +13,17 @@ class BodyDoubleScreen extends StatefulWidget {
 
 class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
   bool _joined = false;
-  int _roomCount = 127;
   final List<String> _sentCheers = [];
 
   final _cheers = const ['👏', '💪', '🔥', '❤️', '🎉', '🌟'];
 
-  /// Body doubling is the strongest network-effect surface in the product:
-  /// every additional person in a room makes the room more valuable to
-  /// everyone already in it. That is why it is a Pro feature — it is also
-  /// why the gate must be soft and never block browsing the room.
-  Future<bool> _guardPro() async {
-    return ProGate.guard(
-      context,
-      feature: ProFeature.bodyDoubling,
-      trigger: PaywallTrigger.bodyDoubling,
-    );
-  }
+  /// Body doubling is the strongest network-effect surface in the product,
+  /// and it is not built yet: there is no presence service and cheers are
+  /// stored locally rather than delivered.
+  ///
+  /// It is therefore FREE and clearly labelled as a preview. Charging for
+  /// a simulated social feature would be a misrepresentation — see
+  /// [FeatureFlags]. The gate returns when the backend does.
 
   void _sendCheer(String emoji) {
     setState(() {
@@ -38,7 +32,7 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
     track(Ev.bodyDoubleCheered, {'type': emoji});
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$emoji Sent cheer to someone in the focus room!'),
+        content: Text('$emoji Saved. Cheers reach real people once rooms are live.'),
         duration: const Duration(seconds: 1),
         backgroundColor: EkagraColors.primary,
       ),
@@ -80,13 +74,13 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
                     const Text('🤝', style: TextStyle(fontSize: 48)),
                     const SizedBox(height: EkagraSpacing.sm),
                     Text(
-                      '$_roomCount people focusing right now',
+                      'Focus room preview',
                       style: EkagraTypography.h2.copyWith(fontSize: 20),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Silent, anonymous co-working. You are not alone.',
+                      FeatureFlags.simulatedNotice,
                       style: EkagraTypography.caption,
                       textAlign: TextAlign.center,
                     ),
@@ -107,16 +101,13 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      if (!await _guardPro()) return;
-                      if (!mounted) return;
+                    onPressed: () {
                       setState(() {
                         _joined = true;
-                        _roomCount++;
                       });
-                      track(Ev.bodyDoubleJoined, {'room_count': _roomCount});
+                      track(Ev.bodyDoubleJoined, {'simulated': true});
                     },
-                    child: const Text('Join the Focus Room 🚀'),
+                    child: const Text('Start a Solo Focus Room 🚀'),
                   ),
                 ),
               ] else ...[
@@ -150,7 +141,7 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Anonymous cheer to encourage a fellow focus partner.',
+                  'Preview: cheers are saved locally until shared rooms ship.',
                   style: EkagraTypography.caption,
                 ),
 
@@ -190,7 +181,6 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
                   onPressed: () {
                     setState(() {
                       _joined = false;
-                      _roomCount--;
                     });
                   },
                   child: const Text('Leave Room'),
