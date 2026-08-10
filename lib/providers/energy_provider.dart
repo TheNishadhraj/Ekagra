@@ -30,13 +30,32 @@ class EnergyProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _logs = list
-          .map((e) => EnergyLog.fromJson(e as Map<String, dynamic>))
-          .toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw != null) {
+        try {
+          final list = jsonDecode(raw);
+          if (list is List) {
+            _logs = list
+                .whereType<Map<String, dynamic>>()
+                .map((e) {
+                  try {
+                    return EnergyLog.fromJson(e);
+                  } catch (err) {
+                    debugPrint('EnergyLog.fromJson error: $err');
+                    return null;
+                  }
+                })
+                .whereType<EnergyLog>()
+                .toList();
+          }
+        } catch (e) {
+          debugPrint('EnergyProvider load JSON error: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('EnergyProvider load error: $e');
     }
     _loaded = true;
     notifyListeners();
@@ -51,11 +70,15 @@ class EnergyProvider extends ChangeNotifier {
       ..._logs,
       EnergyLog(level: level, timestamp: DateTime.now()),
     ];
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode(_logs.map((e) => e.toJson()).toList()),
-    );
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        jsonEncode(_logs.map((e) => e.toJson()).toList()),
+      );
+    } catch (e) {
+      debugPrint('EnergyProvider log persist error: $e');
+    }
     notifyListeners();
   }
 }

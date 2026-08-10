@@ -87,7 +87,7 @@ class EkagraPaywallSheet extends StatelessWidget {
           ),
           const SizedBox(height: EkagraSpacing.xs),
           Text(
-            'Cancel anytime with 1 tap in Settings. No questions asked.',
+            'Cancel anytime in device Settings > Subscriptions. No questions asked.',
             style: EkagraTypography.tiny,
             textAlign: TextAlign.center,
           ),
@@ -116,7 +116,7 @@ class EkagraPaywallSheet extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Maybe later',
+              'Maybe later (Continue Free)',
               style: EkagraTypography.caption,
             ),
           ),

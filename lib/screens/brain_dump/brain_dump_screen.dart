@@ -18,6 +18,7 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
   final FocusNode _focusNode = FocusNode();
   final List<String> _dumpedItems = [];
   bool _isListeningVoice = false;
+  bool _showAllTemplates = false;
 
   final List<String> _categoryChips = const [
     '📧 Email',
@@ -65,7 +66,6 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
       _isListeningVoice = !_isListeningVoice;
     });
     if (_isListeningVoice) {
-      // Simulate voice input adding a item after 2s
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted && _isListeningVoice) {
           _addItem('Call dentist for appointment');
@@ -80,6 +80,8 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = context.read<TaskProvider>();
+    final featuredTemplates = EkagraConstants.commonTaskTemplates.take(3).toList();
+    final remainingTemplates = EkagraConstants.commonTaskTemplates.skip(3).toList();
 
     return Scaffold(
       backgroundColor: EkagraColors.background,
@@ -220,38 +222,31 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                             Text('Stuck on what to dump?', style: EkagraTypography.bodyBold),
                             const SizedBox(height: EkagraSpacing.xs),
                             Text(
-                              'Tap any template to add instantly:',
+                              'Tap a template chip below:',
                               style: EkagraTypography.caption,
                             ),
                             const SizedBox(height: EkagraSpacing.md),
+
+                            // Rule 1 Compliance: Max 3 Primary Featured Templates
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: EkagraConstants.commonTaskTemplates.map((t) {
-                                return InkWell(
-                                  onTap: () => _addItem(t),
-                                  borderRadius: BorderRadius.circular(EkagraRadius.full),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: EkagraColors.surfaceElevated,
-                                      borderRadius: BorderRadius.circular(EkagraRadius.full),
-                                      border: Border.all(
-                                        color: EkagraColors.primaryLight.withValues(alpha: 0.2),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      '+ $t',
-                                      style: EkagraTypography.caption.copyWith(
-                                        color: EkagraColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
+                              alignment: WrapAlignment.center,
+                              children: [
+                                ...featuredTemplates.map((t) => _templateChip(t)),
+                                if (_showAllTemplates)
+                                  ...remainingTemplates.map((t) => _templateChip(t)),
+                              ],
+                            ),
+
+                            const SizedBox(height: EkagraSpacing.sm),
+
+                            TextButton.icon(
+                              onPressed: () {
+                                setState(() => _showAllTemplates = !_showAllTemplates);
+                              },
+                              icon: Icon(_showAllTemplates ? Icons.expand_less : Icons.expand_more, size: 18),
+                              label: Text(_showAllTemplates ? 'Show fewer prompts' : 'More prompt ideas'),
                             ),
                           ],
                         ),
@@ -351,6 +346,32 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _templateChip(String t) {
+    return InkWell(
+      onTap: () => _addItem(t),
+      borderRadius: BorderRadius.circular(EkagraRadius.full),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 6,
+        ),
+        decoration: BoxDecoration(
+          color: EkagraColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(EkagraRadius.full),
+          border: Border.all(
+            color: EkagraColors.primaryLight.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Text(
+          '+ $t',
+          style: EkagraTypography.caption.copyWith(
+            color: EkagraColors.textPrimary,
+          ),
         ),
       ),
     );
