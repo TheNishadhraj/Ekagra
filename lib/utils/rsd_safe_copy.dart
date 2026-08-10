@@ -49,9 +49,9 @@ class RsdSafeCopy {
   static const networkError =
       "Looks like you're offline. No worries — your data is safe 📶";
   static const aiTimeout =
-      "Hmm, our AI is thinking slowly. Let's pick a task the old-fashioned way.";
+      "Hmm, that took too long. Let's pick a task the simple way.";
   static const taskLimit =
-      "You've got 10 tasks! Upgrade to Pro for unlimited tasks + AI picks.";
+      "You've reached the free task limit. Pro removes the ceiling.";
   static const subscriptionExpired =
       'Your Pro access ended. Your data is still here! Renew to keep going.';
   static const paymentFailed =

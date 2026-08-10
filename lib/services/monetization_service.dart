@@ -69,7 +69,11 @@ extension ProFeatureX on ProFeature {
       case ProFeature.unlimitedTasks:
         return 'Unlimited brain dump';
       case ProFeature.aiTaskSelection:
-        return 'AI picks your ONE thing';
+        // Not "AI": this is on-device rule-based scoring. Calling a
+        // deterministic scoring function "AI" is a claim we cannot support,
+        // and the honest label is also the more reassuring one for a
+        // privacy-sensitive audience.
+        return 'Smart ONE-thing picker';
       case ProFeature.allFocusDurations:
         return 'Every focus length';
       case ProFeature.unlimitedDopamineMenu:
@@ -81,7 +85,7 @@ extension ProFeatureX on ProFeature {
       case ProFeature.allAmbientSounds:
         return 'All ambient sounds';
       case ProFeature.aiTaskBreakdown:
-        return 'AI task breakdown';
+        return 'Task breakdown';
       case ProFeature.energyMoodInsights:
         return 'Energy & mood insights';
       case ProFeature.customThemes:
@@ -100,7 +104,7 @@ extension ProFeatureX on ProFeature {
       case ProFeature.unlimitedTasks:
         return 'Get everything out of your head — no ceiling.';
       case ProFeature.aiTaskSelection:
-        return 'Stop deciding. Ekagra picks the right task for your energy.';
+        return 'Stop deciding. Ekagra picks for your energy — all on device.';
       case ProFeature.allFocusDurations:
         return 'Five minutes on a rough day. Sixty when you are flying.';
       case ProFeature.unlimitedDopamineMenu:

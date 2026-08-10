@@ -214,6 +214,32 @@ void main() {
     });
   });
 
+  group('Truth in advertising — no unsupported "AI" claims', () {
+    test('no user-facing copy claims AI while the engine is on-device', () {
+      // `AiService` is a deterministic scoring function. There is no HTTP
+      // client in pubspec.yaml and no model call anywhere. Until that
+      // changes, calling it "AI" in the UI is a claim we cannot support.
+      if (FeatureFlags.aiTaskSelection == FeatureMaturity.live) return;
+
+      final aiClaim = RegExp(r'\bA\.?I\.?\b|artificial intelligence|GPT',
+          caseSensitive: false);
+      final violations = <String>[];
+
+      for (final file in uiFiles) {
+        for (final text in userFacingStrings(file.readAsStringSync())) {
+          if (aiClaim.hasMatch(text)) violations.add('${file.path}: "$text"');
+        }
+      }
+
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Ship a real model before claiming one. Violations:\n'
+            '${violations.join('\n')}',
+      );
+    });
+  });
+
   group('Rule 13 — soft delete only', () {
     test('no hard delete of task collections in providers', () {
       final providerDir = Directory('lib/providers');

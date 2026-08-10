@@ -407,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text('No active tasks!', style: EkagraTypography.h3),
             const SizedBox(height: 4),
             Text(
-              'Dump your ideas to let AI pick ONE thing for you.',
+              'Dump your ideas and Ekagra will pick ONE thing for you.',
               style: EkagraTypography.caption,
               textAlign: TextAlign.center,
             ),
