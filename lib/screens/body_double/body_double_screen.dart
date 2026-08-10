@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../config/theme.dart';
+import '../../services/analytics_service.dart';
+import '../../services/monetization_service.dart';
+import '../../widgets/pro_gate.dart';
 
 class BodyDoubleScreen extends StatefulWidget {
   const BodyDoubleScreen({super.key});
@@ -16,10 +19,23 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
 
   final _cheers = const ['👏', '💪', '🔥', '❤️', '🎉', '🌟'];
 
+  /// Body doubling is the strongest network-effect surface in the product:
+  /// every additional person in a room makes the room more valuable to
+  /// everyone already in it. That is why it is a Pro feature — it is also
+  /// why the gate must be soft and never block browsing the room.
+  Future<bool> _guardPro() async {
+    return ProGate.guard(
+      context,
+      feature: ProFeature.bodyDoubling,
+      trigger: PaywallTrigger.bodyDoubling,
+    );
+  }
+
   void _sendCheer(String emoji) {
     setState(() {
       _sentCheers.add(emoji);
     });
+    track(Ev.bodyDoubleCheered, {'type': emoji});
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$emoji Sent cheer to someone in the focus room!'),
@@ -91,11 +107,14 @@ class _BodyDoubleScreenState extends State<BodyDoubleScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      if (!await _guardPro()) return;
+                      if (!mounted) return;
                       setState(() {
                         _joined = true;
                         _roomCount++;
                       });
+                      track(Ev.bodyDoubleJoined, {'room_count': _roomCount});
                     },
                     child: const Text('Join the Focus Room 🚀'),
                   ),

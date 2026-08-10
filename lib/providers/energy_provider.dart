@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
 import '../models/energy_log_model.dart';
+import '../services/analytics_service.dart';
+import '../services/growth_service.dart';
 
 class EnergyProvider extends ChangeNotifier {
   static const _key = 'ekagra_energy_logs';
@@ -47,6 +49,9 @@ class EnergyProvider extends ChangeNotifier {
   }
 
   Future<void> log(EnergyLevel level) async {
+    track(Ev.energyCheckin, {'level': level.name});
+    await GrowthService.instance
+        .completeStep(ActivationStep.firstEnergyCheckin);
     _logs = [
       ..._logs,
       EnergyLog(level: level, timestamp: DateTime.now()),

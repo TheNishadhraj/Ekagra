@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
 import '../models/mood_log_model.dart';
+import '../services/analytics_service.dart';
 
 class MoodProvider extends ChangeNotifier {
   static const _key = 'ekagra_mood_logs';
@@ -46,6 +47,7 @@ class MoodProvider extends ChangeNotifier {
   }
 
   Future<void> log(MoodLevel mood) async {
+    track(Ev.moodCheckin, {'level': mood.name});
     _logs = [
       ..._logs,
       MoodLog(mood: mood, timestamp: DateTime.now()),

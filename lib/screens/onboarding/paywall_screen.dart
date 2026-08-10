@@ -2,12 +2,49 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/constants.dart';
 import '../../config/routes.dart';
 import '../../config/theme.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/experiment_service.dart';
+import '../../services/monetization_service.dart';
 
-class PaywallScreen extends StatelessWidget {
+class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
+
+  @override
+  State<PaywallScreen> createState() => _PaywallScreenState();
+}
+
+class _PaywallScreenState extends State<PaywallScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Timing experiment. In the `post_first_value` arm we skip the
+    // onboarding paywall entirely and let the contextual gates do the work
+    // after the user has felt the product. Asking for money before anyone
+    // has experienced value is the single most common way consumer apps
+    // burn their best conversion moment.
+    final deferPaywall = ExperimentService.instance
+        .isIn(Experiments.paywallTiming, 'post_first_value');
+
+    if (deferPaywall) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final settings = context.read<SettingsProvider>();
+        await settings.completeOnboarding();
+        track(Ev.onboardingCompleted, {'paywall_deferred': true});
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, AppRoutes.main);
+        }
+      });
+    } else {
+      MonetizationService.instance
+          .recordPaywallShown(PaywallTrigger.onboarding);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +106,10 @@ class PaywallScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: EkagraSpacing.xs),
-                    _featureRow('✓ Brain dump (10 tasks)', false),
+                    _featureRow(
+                      '✓ Brain dump (${MonetizationService.instance.freeTaskLimit} tasks)',
+                      false,
+                    ),
                     _featureRow('✓ Basic focus timer', false),
                     _featureRow('✓ 3 dopamine menu items', false),
 
@@ -118,7 +158,9 @@ class PaywallScreen extends StatelessWidget {
 
               // Pricing summary
               Text(
-                'Try Pro free for 7 days\nThen \$7.99/month or \$49.99/year',
+                'Try Pro free for ${MonetizationService.instance.trialDays} days\n'
+                'Then \$${EkagraConstants.proMonthlyPrice.toStringAsFixed(2)}/month '
+                'or \$${EkagraConstants.proYearlyPrice.toStringAsFixed(2)}/year',
                 style: EkagraTypography.bodyBold.copyWith(
                   color: EkagraColors.textPrimary,
                 ),
@@ -142,8 +184,13 @@ class PaywallScreen extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () async {
+                    await MonetizationService.instance.startTrial(
+                      trigger: PaywallTrigger.onboarding,
+                      plan: SubscriptionPlan.annual,
+                    );
                     await settings.enablePro();
-                    await settings.completeOnboarding();
+                    await settings.completeOnboarding(paywallSeen: true);
+                    track(Ev.onboardingCompleted, {'converted': true});
                     if (context.mounted) {
                       Navigator.pushReplacementNamed(context, AppRoutes.main);
                     }
@@ -155,9 +202,9 @@ class PaywallScreen extends StatelessWidget {
                     ),
                     elevation: 4,
                   ),
-                  child: const Text(
-                    'Start 7-Day Free Trial ✨',
-                    style: TextStyle(
+                  child: Text(
+                    'Start ${MonetizationService.instance.trialDays}-Day Free Trial ✨',
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -170,7 +217,10 @@ class PaywallScreen extends StatelessWidget {
 
               TextButton(
                 onPressed: () async {
-                  await settings.completeOnboarding();
+                  await MonetizationService.instance
+                      .recordPaywallDismissed(PaywallTrigger.onboarding);
+                  await settings.completeOnboarding(paywallSeen: true);
+                  track(Ev.onboardingCompleted, {'converted': false});
                   if (context.mounted) {
                     Navigator.pushReplacementNamed(context, AppRoutes.main);
                   }
@@ -192,7 +242,7 @@ class PaywallScreen extends StatelessWidget {
     );
   }
 
-  Widget _featureRow(String text, bool isPro) {
+  static Widget _featureRow(String text, bool isPro) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Text(
