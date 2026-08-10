@@ -11,6 +11,7 @@ import '../services/ai_service.dart';
 import '../services/analytics_service.dart';
 import '../services/growth_service.dart';
 import '../services/monetization_service.dart';
+import '../utils/safe_store.dart';
 
 class TaskProvider extends ChangeNotifier {
   static const _tasksKey = 'ekagra_tasks';
@@ -55,13 +56,14 @@ class TaskProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_tasksKey);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _tasks = list
-          .map((e) => TaskModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
+    // Salvage per-record: one malformed task must never cost the user the
+    // rest of their list, and must never prevent the app from starting.
+    // See SafeStore for the quarantine policy.
+    _tasks = SafeStore.decodeList<TaskModel>(
+      raw: prefs.getString(_tasksKey),
+      key: _tasksKey,
+      fromJson: TaskModel.fromJson,
+    );
     _loaded = true;
     refreshOneThing();
     notifyListeners();

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
 import '../../providers/settings_provider.dart';
-import '../../services/analytics_service.dart';
 import '../../services/experiment_service.dart';
 import '../../services/growth_service.dart';
 import '../../services/monetization_service.dart';

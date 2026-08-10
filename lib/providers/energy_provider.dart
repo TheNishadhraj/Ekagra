@@ -7,6 +7,7 @@ import '../config/constants.dart';
 import '../models/energy_log_model.dart';
 import '../services/analytics_service.dart';
 import '../services/growth_service.dart';
+import '../utils/safe_store.dart';
 
 class EnergyProvider extends ChangeNotifier {
   static const _key = 'ekagra_energy_logs';
@@ -33,13 +34,11 @@ class EnergyProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw != null) {
-      final list = jsonDecode(raw) as List<dynamic>;
-      _logs = list
-          .map((e) => EnergyLog.fromJson(e as Map<String, dynamic>))
-          .toList();
-    }
+    _logs = SafeStore.decodeList<EnergyLog>(
+      raw: prefs.getString(_key),
+      key: _key,
+      fromJson: EnergyLog.fromJson,
+    );
     _loaded = true;
     notifyListeners();
   }
