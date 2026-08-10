@@ -131,7 +131,11 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> enablePro() async {
-    _user = _user.copyWith(isPro: true);
+    // Record the trial start time on first upgrade so the legacy `isPro`
+    // path can surface "X days left" and detect expiry. Leaving it null
+    // preserves the old behaviour for paid installs that pre-date this field.
+    final trialStart = _user.trialStartedAt ?? DateTime.now();
+    _user = _user.copyWith(isPro: true, trialStartedAt: trialStart);
     await _persist();
     notifyListeners();
   }
