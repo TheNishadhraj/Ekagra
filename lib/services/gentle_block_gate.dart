@@ -17,7 +17,6 @@ class GentleBlockConfig {
       'com.zhiliaoapp.musically',
     ],
     this.monkMode = false,
-    this.appNameByPackage = const {},
   });
 
   /// Android package names of the apps the user chose to be paused on.
@@ -28,19 +27,6 @@ class GentleBlockConfig {
   /// break escape for the session duration. Off by default — a wall is
   /// never the default posture (Rules 10/14).
   final bool monkMode;
-
-  /// Friendly display names for copy ("You reached for Instagram").
-  final Map<String, String> appNameByPackage;
-
-  String nameOf(String package) =>
-      appNameByPackage[package] ?? _fallbackName(package);
-
-  static String _fallbackName(String package) {
-    final parts = package.split('.');
-    final raw = parts.isEmpty ? 'that app' : parts.last;
-    if (raw.length <= 2) return 'that app';
-    return raw[0].toUpperCase() + raw.substring(1);
-  }
 }
 
 /// Outcome of a foreground-app event during the gate's watch.

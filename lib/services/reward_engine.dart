@@ -9,6 +9,9 @@ class RewardEngine {
 
   final Random _random;
 
+  DopamineItem _pick(List<DopamineItem> pool) =>
+      pool[_random.nextInt(pool.length)];
+
   /// Small-tier micro-tick for a completed decomposition step (WI-3.1).
   ///
   /// Deliberately excluded from the variable-ratio roll: steps fire often,
@@ -21,7 +24,7 @@ class RewardEngine {
   }) {
     var pool = menu.forTier(RewardTier.quick);
     if (pool.isEmpty) pool = DopamineMenu.defaults.quick;
-    final item = pool[_random.nextInt(pool.length)];
+    final item = _pick(pool);
     return DopamineReward.fromItem(
       item,
       relatedTaskId: relatedTaskId,
@@ -37,7 +40,7 @@ class RewardEngine {
   }) {
     var pool = menu.forTier(RewardTier.big);
     if (pool.isEmpty) pool = DopamineMenu.defaults.big;
-    final item = pool[_random.nextInt(pool.length)];
+    final item = _pick(pool);
     return DopamineReward.fromItem(
       item,
       isRare: true,
@@ -67,7 +70,7 @@ class RewardEngine {
     if (pool.isEmpty) pool = menu.all;
     if (pool.isEmpty) pool = DopamineMenu.defaults.all;
 
-    final item = pool[_random.nextInt(pool.length)];
+    final item = _pick(pool);
     final isRare = _random.nextDouble() < 0.05;
 
     return DopamineReward.fromItem(

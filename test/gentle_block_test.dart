@@ -60,12 +60,6 @@ void main() {
         GentleBlockDecision.allow);
   });
 
-  test('fallback app names are friendly', () {
-    const config = GentleBlockConfig();
-    expect(config.nameOf('com.instagram.android'), isNotEmpty);
-    expect(config.nameOf('x.y.ab'), 'that app');
-  });
-
   test('pause screen copy is RSD-safe', () {
     const copies = [
       'You reached for Instagram.',

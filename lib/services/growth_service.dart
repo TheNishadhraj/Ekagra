@@ -265,7 +265,7 @@ class GrowthService extends ChangeNotifier {
     }
 
     // WI-5.3: crossing an active-day milestone arms a one-shot
-    // celebration (fire-once per milestone, highest uncrossed first).
+    // celebration (fire-once per milestone; the earliest uncrossed one).
     if (_pendingMilestone == null) {
       for (final m in milestoneDays) {
         if (_totalActiveDays >= m && !_celebratedMilestones.contains(m)) {

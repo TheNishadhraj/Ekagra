@@ -205,7 +205,6 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = context.read<TaskProvider>();
-    final rewardProvider = context.read<RewardProvider>();
 
     return Container(
       decoration: const BoxDecoration(
@@ -458,11 +457,7 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await taskProvider.completeTask(_task.id);
-                      rewardProvider.recordTaskCompletion(_task.id);
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                    onPressed: _finishWholeTask,
                     icon: const Icon(Icons.check_rounded, color: EkagraColors.success),
                     label: const Text('Mark Done ✅'),
                   ),
