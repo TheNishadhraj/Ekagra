@@ -200,3 +200,19 @@ Impact: nudges may drift minutes late and disappear after a reboot until
 the next app open. Documented rather than fixed — exact alarms need
 `SCHEDULE_EXACT_ALARM` user grants (a permission wall), and a boot
 receiver adds manifest surface; revisit with on-device evidence.
+
+---
+
+## RISK-17 — Decomposition template drift & reward double-fire (ADR-007)
+
+**Severity:** P3
+**Owner:** Product Owner
+
+`task_breakdown_templates.json` is owner-tunable data; a hand-edit could
+break spiciness bounds (3–5/6–10/11–20) or introduce shame-language
+steps. Both are machine-enforced by tests, which only run in CI —
+until the owner activates CI, edits should be followed by a local
+`flutter test`. Reward double-fire from the new step path is guarded by
+an idempotent `completeTask` (asserted exactly-once in
+`decomposition_test`); the residual is a same-second double-tap racing
+two `updateTask` writes — acceptable at single-device scale.

@@ -143,6 +143,92 @@ minutes and got a phone call that killed the app lost everything.
 
 ---
 
+## ADR-006 — Body doubling ("Focus Caves") stays unbuilt this phase
+
+**Date:** 2026-08-26 · **Status:** accepted · **Work item:** Phase 4
+
+### Context
+The work order allows body doubling "at agent discretion, explicitly
+reported." A real room product needs (a) presence infra (LiveKit self-host
+~$60–200/mo at ~200 concurrent, or Cloud ~$50/mo — RISK-13), (b) a
+moderation spec that lands **before** code (ToS, report flow to a human
+queue, avatar mode, join rate limits, no DMs in V1 — RISK-12), and
+(c) owner spending approval — which the standing constraints withhold
+("no buying anything", no monetization moves without the owner).
+
+### Decision
+Cut from this phase; nothing ships, not even a "coming soon" surface
+(K18 pattern is a release blocker). What Phase 4 ships instead is the
+**asynchronous** body-doubling seam that already exists honestly:
+focus sessions with visible elapsed progress, reward celebrations on
+completion, and nudge copy that says "someone is cheering" only in the
+generic sense. The rebuild checklist (pre-registered in RISK-12/13):
+1. Moderation spec merged before any room code.
+2. LiveKit self-host vs Cloud decision with a cost ceiling.
+3. Avatar-first presence (camera optional, off by default).
+4. Room cap + join rate limits; no DMs in V1.
+5. Feature flag `bodyDoubling` at `unbuilt` until all of the above.
+
+### Consequences
+No social surface exists, so RISK-12/13 stay dormant by construction.
+If the owner wants Caves, the checklist above is the entry fee — not a
+weekend build. This ADR exists so the risk register's references to
+"the Phase-4 cut" resolve to a real decision record.
+
+
+---
+
+## ADR-007 — Task decomposition: additive schema + one-step execution
+
+**Date:** 2026-08-26 · **Status:** accepted · **Work items:** WI-3.1
+
+### Context
+WI-3.1 replaces the dishonest "AI breakdown" (canned templates dressed
+as intelligence, `simulated`) with a real, local, honestly-labelled
+decomposer: 32 template families × 3 spiciness tiers as **data**
+(`assets/templates/task_breakdown_templates.json`, owner-tunable
+without a release), generic 2-minute-rule fallback, and a one-step-
+at-a-time execution mode fused with the reward engine.
+
+### Decision
+1. **Schema (the persistence change this ADR covers):** `TaskModel`
+   gains two **additive, optional** fields — `stepStates:
+   List<String>` (`'done'`/`'skipped'`, parallel to `subtasks`) and
+   `spiciness: String?`. Old payloads decode with defaults (missing →
+   empty → "no progress recorded"); `toJson` writes them harmlessly
+   for older readers to ignore. No key is renamed or removed; the
+   SafeStore per-record decode/quarantine path is untouched.
+2. **Execution mode:** task detail shows exactly ONE current step
+   ("Done with this step" / "Skip step" / "See all steps" — the
+   three-choice budget). Full list is a deliberate toggle away.
+3. **Reward fusion:** a done step fires `rollQuick` (quick-tier only,
+   excluded from the variable-ratio roll — scarcity stays reserved for
+   whole-task completion). `completeTask` is now idempotent so the
+   completion reward can never double-fire.
+4. **Honesty:** label is "Break it down 🌶️" + "built from patterns,
+   runs on your phone — no cloud, no account." Every template step
+   string is shame-scanned by `design_rules_test` like any UI copy.
+   `FeatureFlags.aiTaskBreakdown` moves `simulated → live` (it now
+   fronts the real local decomposer; name kept for the paywall matrix).
+
+### Alternatives considered
+- **On-device LLM (Gemini Nano / whisper-style local model):** real AI,
+  but a multi-hundred-MB model or new native deps — outside this
+  sandbox's toolchain and unjustified for list generation. The template
+  approach is deterministic, auditable, and editable by the owner.
+- **Extending `AiService.breakdownTask`:** keeping the fake seam would
+  preserve the dishonest name; the decomposer is a separate, honest
+  service instead.
+
+### Consequences
+- Risk: template data drift (bounds, tone) — mitigated by two tests
+  (`decomposition_test` bounds check; `design_rules_test` shame scan).
+- Risk: step/reward double-fire — mitigated by idempotent
+  `completeTask` + exactly-once assertion in tests.
+- Registered as RISK-17.
+
+---
+
 ## ADR-008 — Onboarding reflow: 3 effective steps, real notifications, no paywall route
 
 **Date:** 2026-08-26

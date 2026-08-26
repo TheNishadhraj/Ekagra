@@ -1,0 +1,1319 @@
+{
+  "version": 1,
+  "_comment": "Ekagra task-breakdown templates (WI-3.1). DATA, NOT CODE: the owner can tune any step here without a release. Bounds per spiciness: mild 3-5, medium 6-10, spicy 11-20 steps. Unknown tasks fall back to the generic scaffold in task_decomposer.dart. Steps are written to be completable in roughly 2-5 minutes each.",
+  "generic": {
+    "mild": [
+      "Open what you need",
+      "Do the first 2 minutes",
+      "Check: done, or what's next?"
+    ],
+    "medium": [
+      "Name the finished thing in one sentence",
+      "Open what you need",
+      "Do the first 2 minutes",
+      "Find the easiest visible piece",
+      "Do that piece",
+      "Check: done, or what's next?"
+    ],
+    "spicy": [
+      "Put the task on one sticky note",
+      "Say the goal out loud",
+      "Open what you need",
+      "Set a 2-minute timer",
+      "Do only what the timer allows",
+      "Write down where you stopped",
+      "Find the easiest visible piece",
+      "Do that piece",
+      "Cross it off the note",
+      "Set another 2-minute timer",
+      "Do the next tiny piece",
+      "Check: done, or what's next?"
+    ]
+  },
+  "families": [
+    {
+      "id": "kitchen",
+      "keywords": [
+        "kitchen",
+        "dishes",
+        "wash up",
+        "sink",
+        "counters",
+        "countertops"
+      ],
+      "steps": {
+        "mild": [
+          "Clear one counter",
+          "Wash or load the dishes",
+          "Wipe the surfaces",
+          "Hang the cloth to dry"
+        ],
+        "medium": [
+          "Put away the stray items",
+          "Scrape and stack the dishes",
+          "Wash or load the dishes",
+          "Wipe the counters",
+          "Wipe the stove",
+          "Sweep the floor quickly",
+          "Hang the cloth to dry"
+        ],
+        "spicy": [
+          "Pick up 3 stray items",
+          "Put each where it lives",
+          "Scrape the plates",
+          "Stack them by the sink",
+          "Fill or load the washer",
+          "Start the washer",
+          "Wipe the left counter",
+          "Wipe the right counter",
+          "Wipe the stove top",
+          "Sweep the floor",
+          "Take out the trash bag",
+          "Put in a fresh bag",
+          "Hang the cloth to dry"
+        ]
+      }
+    },
+    {
+      "id": "tidy_room",
+      "keywords": [
+        "tidy",
+        "clean my room",
+        "bedroom",
+        "declutter",
+        "mess",
+        "straighten"
+      ],
+      "steps": {
+        "mild": [
+          "Make the bed",
+          "Put away 10 things",
+          "Clear one surface"
+        ],
+        "medium": [
+          "Make the bed",
+          "Collect the trash first",
+          "Collect the dishes second",
+          "Put away the clothes",
+          "Clear the desk or dresser",
+          "Put away 10 more things",
+          "Look around: pick one eyesore"
+        ],
+        "spicy": [
+          "Set a 5-minute timer",
+          "Make the bed",
+          "Grab a trash bag",
+          "Fill it once",
+          "Collect dishes into one pile",
+          "Move them to the kitchen",
+          "Pick up all clothes",
+          "Dirty ones in the basket",
+          "Clean ones folded once",
+          "Clear the nightstand",
+          "Clear the desk surface",
+          "Put away 10 small things",
+          "Stop and look: better, yes?"
+        ]
+      }
+    },
+    {
+      "id": "laundry",
+      "keywords": [
+        "laundry",
+        "washing",
+        "dryer",
+        "clothes wash"
+      ],
+      "steps": {
+        "mild": [
+          "Gather the clothes",
+          "Start a load",
+          "Set a done-reminder"
+        ],
+        "medium": [
+          "Gather the clothes",
+          "Sort into one dark, one light",
+          "Start a load",
+          "Set a done-reminder",
+          "Move to dryer when it beeps",
+          "Fold the warm pile"
+        ],
+        "spicy": [
+          "Find the hamper",
+          "Collect stray clothes",
+          "Empty pockets once",
+          "Sort darks",
+          "Sort lights",
+          "Load the washer",
+          "Add soap",
+          "Start the cycle",
+          "Set a done-reminder",
+          "Move to the dryer",
+          "Set another reminder",
+          "Fold while warm",
+          "Put each pile away"
+        ]
+      }
+    },
+    {
+      "id": "bathroom",
+      "keywords": [
+        "bathroom",
+        "toilet",
+        "shower clean",
+        "bath clean",
+        "sink scrub"
+      ],
+      "steps": {
+        "mild": [
+          "Spray the sink",
+          "Wipe sink and mirror",
+          "One toilet swipe"
+        ],
+        "medium": [
+          "Spray everything first",
+          "Wipe the mirror",
+          "Wipe the sink",
+          "Scrub the toilet bowl",
+          "Wipe the toilet seat",
+          "Swap the towel",
+          "One quick floor sweep"
+        ],
+        "spicy": [
+          "Get the supplies out",
+          "Spray the shower",
+          "Spray the sink",
+          "Spray the toilet",
+          "Let it all sit",
+          "Wipe the mirror",
+          "Wipe the sink taps",
+          "Wipe the counter",
+          "Scrub the toilet bowl",
+          "Wipe the seat and lid",
+          "Rinse the shower",
+          "Swap the towels",
+          "Sweep the floor"
+        ]
+      }
+    },
+    {
+      "id": "floors",
+      "keywords": [
+        "vacuum",
+        "hoover",
+        "sweep",
+        "mop",
+        "floors"
+      ],
+      "steps": {
+        "mild": [
+          "Clear the biggest floor items",
+          "Vacuum the middle",
+          "Done is better than corners"
+        ],
+        "medium": [
+          "Clear the floor items",
+          "Vacuum the middle",
+          "Vacuum the traffic lines",
+          "Spot-mop one spill",
+          "Put the vacuum away",
+          "Empty the vacuum after"
+        ],
+        "spicy": [
+          "Pick up everything soft",
+          "Pick up everything hard",
+          "Move 3 light chairs",
+          "Vacuum the middle",
+          "Vacuum under the table",
+          "Vacuum the doorway",
+          "Vacuum one room's edges",
+          "Mop one small patch",
+          "Let it dry",
+          "Put everything back",
+          "Empty the vacuum if full"
+        ]
+      }
+    },
+    {
+      "id": "email",
+      "keywords": [
+        "email",
+        "emails",
+        "inbox",
+        "reply",
+        "mail",
+        "unread"
+      ],
+      "steps": {
+        "mild": [
+          "Open the inbox",
+          "Find the one that matters most",
+          "Send a 2-line reply"
+        ],
+        "medium": [
+          "Open the inbox",
+          "Skim subjects only",
+          "Delete 5 obvious ones",
+          "Flag the one that matters most",
+          "Reply in 2 lines",
+          "Send it before editing"
+        ],
+        "spicy": [
+          "Open the inbox",
+          "Sort by oldest",
+          "Delete 5 obvious ones",
+          "Archive 5 newsletters",
+          "Pick the oldest real one",
+          "Read only that one",
+          "Write a 2-line reply",
+          "Send it",
+          "Pick the next one",
+          "Write its 2-line reply",
+          "Send it",
+          "Close the inbox",
+          "Note the rest for tomorrow"
+        ]
+      }
+    },
+    {
+      "id": "call",
+      "keywords": [
+        "call",
+        "phone",
+        "ring",
+        "dial"
+      ],
+      "steps": {
+        "mild": [
+          "Find the number",
+          "Write your one question",
+          "Dial"
+        ],
+        "medium": [
+          "Find the number",
+          "Write your one question",
+          "Write your backup ask",
+          "Check the clock: business hours?",
+          "Dial",
+          "Ask, thank, hang up"
+        ],
+        "spicy": [
+          "Find the number",
+          "Save it to the contact",
+          "Write your one question",
+          "Write your backup ask",
+          "Write your account details",
+          "Rehearse once out loud",
+          "Check the clock",
+          "Silence your notifications",
+          "Dial",
+          "Ask the main question",
+          "Note the answer",
+          "Ask the backup",
+          "Thank them and hang up"
+        ]
+      }
+    },
+    {
+      "id": "write",
+      "keywords": [
+        "write",
+        "essay",
+        "report",
+        "article",
+        "blog",
+        "draft",
+        "doc",
+        "thesis"
+      ],
+      "steps": {
+        "mild": [
+          "Open a blank doc",
+          "Write 3 headings",
+          "Flesh the first one"
+        ],
+        "medium": [
+          "Open a blank doc",
+          "Write the one-sentence point",
+          "List 3 headings",
+          "Dump bullets under each",
+          "Flesh the first one",
+          "Fix only the worst sentence",
+          "Save and stop while ahead"
+        ],
+        "spicy": [
+          "Open a blank doc",
+          "Name the reader",
+          "Write the one-sentence point",
+          "List 3 headings",
+          "Free-write for 5 minutes",
+          "Drag the good bits under headings",
+          "Delete the obvious junk",
+          "Flesh the first heading",
+          "Flesh the second",
+          "Flesh the third",
+          "Write one closing line",
+          "Fix the worst sentence",
+          "Save and stop while ahead"
+        ]
+      }
+    },
+    {
+      "id": "study",
+      "keywords": [
+        "study",
+        "revise",
+        "exam",
+        "learn",
+        "memorize",
+        "flashcards",
+        "practice problems"
+      ],
+      "steps": {
+        "mild": [
+          "Open the material",
+          "Make 5 flashcards or notes",
+          "Review them once"
+        ],
+        "medium": [
+          "Open the material",
+          "Skim the headings",
+          "Make 5 notes",
+          "Review them once",
+          "Do 3 practice problems",
+          "Mark what to redo tomorrow"
+        ],
+        "spicy": [
+          "Open the material",
+          "Skim the headings",
+          "Write the exam date down",
+          "Make 5 notes",
+          "Review them once",
+          "Make 5 more notes",
+          "Review those once",
+          "Do 3 practice problems",
+          "Check the answers",
+          "Mark what you got wrong",
+          "Redo one wrong item",
+          "Mark what to redo tomorrow"
+        ]
+      }
+    },
+    {
+      "id": "read",
+      "keywords": [
+        "read",
+        "reading",
+        "chapter",
+        "paper",
+        "book"
+      ],
+      "steps": {
+        "mild": [
+          "Open to the page",
+          "Read 2 pages",
+          "Note one idea"
+        ],
+        "medium": [
+          "Open to the page",
+          "Read the headings first",
+          "Read 5 pages",
+          "Note one idea",
+          "Mark where you stopped",
+          "Skim the summary once"
+        ],
+        "spicy": [
+          "Open to the page",
+          "Read the headings first",
+          "Read the first section",
+          "Note one idea",
+          "Read the next section",
+          "Note one more idea",
+          "Read one more section",
+          "Skim the summary",
+          "Mark where you stopped",
+          "Tell someone the one idea",
+          "Set a 10-minute timer"
+        ]
+      }
+    },
+    {
+      "id": "meeting",
+      "keywords": [
+        "meeting",
+        "standup",
+        "1:1",
+        "sync",
+        "call prep",
+        "agenda"
+      ],
+      "steps": {
+        "mild": [
+          "Write 3 agenda bullets",
+          "Join on time",
+          "Say the first one early"
+        ],
+        "medium": [
+          "Write 3 agenda bullets",
+          "Note your one ask",
+          "Check the last notes",
+          "Join on time",
+          "Say the ask in the first 5 minutes",
+          "Write follow-ups right after"
+        ],
+        "spicy": [
+          "Write 3 agenda bullets",
+          "Note your one ask",
+          "Note your one update",
+          "Check the last notes",
+          "Prep one number if asked",
+          "Test mic and camera",
+          "Join 1 minute early",
+          "Say the update early",
+          "Ask the ask",
+          "Note answers live",
+          "Write follow-ups right after",
+          "Send one thank-you line"
+        ]
+      }
+    },
+    {
+      "id": "presentation",
+      "keywords": [
+        "presentation",
+        "slides",
+        "deck",
+        "pitch",
+        "keynote",
+        "demo"
+      ],
+      "steps": {
+        "mild": [
+          "Write the one takeaway",
+          "Make 3 title slides",
+          "Fill the middle slide"
+        ],
+        "medium": [
+          "Write the one takeaway",
+          "Sketch 5 slide titles",
+          "Make the title slide",
+          "Fill the middle slides",
+          "One image per 3 slides",
+          "Rehearse once out loud"
+        ],
+        "spicy": [
+          "Write the one takeaway",
+          "Sketch 5 slide titles",
+          "Open the template",
+          "Make the title slide",
+          "Fill slide 2",
+          "Fill slide 3",
+          "Add one image",
+          "Fill slide 4",
+          "Write the closing slide",
+          "Delete 2 clutter slides",
+          "Rehearse once out loud",
+          "Time it",
+          "Note the weakest slide"
+        ]
+      }
+    },
+    {
+      "id": "code",
+      "keywords": [
+        "code",
+        "bug",
+        "implement",
+        "feature",
+        "refactor",
+        "deploy",
+        "fix"
+      ],
+      "steps": {
+        "mild": [
+          "Open the file",
+          "Reproduce the problem",
+          "Fix the smallest piece"
+        ],
+        "medium": [
+          "Open the repo",
+          "Reproduce the problem",
+          "Write the failing case",
+          "Fix the smallest piece",
+          "Run the case",
+          "Commit with one honest line"
+        ],
+        "spicy": [
+          "Open the repo",
+          "Read the error twice",
+          "Reproduce the problem",
+          "Find the exact line",
+          "Write the failing case",
+          "Fix the smallest piece",
+          "Run the case",
+          "Fix the next smallest",
+          "Run all the tests",
+          "Read your diff once",
+          "Commit with one honest line",
+          "Note what to clean later"
+        ]
+      }
+    },
+    {
+      "id": "project",
+      "keywords": [
+        "project",
+        "start",
+        "kickoff",
+        "plan",
+        "organize",
+        "big thing"
+      ],
+      "steps": {
+        "mild": [
+          "Write what 'done' looks like",
+          "List 3 chunks",
+          "Start chunk one"
+        ],
+        "medium": [
+          "Write what 'done' looks like",
+          "List 3 chunks",
+          "Star the scariest chunk",
+          "Break it into 3 pieces",
+          "Start the easiest piece",
+          "Note tomorrow's piece"
+        ],
+        "spicy": [
+          "Write what 'done' looks like",
+          "List 3 chunks",
+          "Star the scariest chunk",
+          "Break chunk one into 3",
+          "Break chunk two into 3",
+          "Break chunk three into 3",
+          "Pick the easiest piece anywhere",
+          "Do its first 2 minutes",
+          "Cross it off",
+          "Pick the next piece",
+          "Do its first 2 minutes",
+          "Note tomorrow's piece"
+        ]
+      }
+    },
+    {
+      "id": "jobapp",
+      "keywords": [
+        "apply",
+        "application",
+        "resume",
+        "cv",
+        "cover letter",
+        "job"
+      ],
+      "steps": {
+        "mild": [
+          "Open the posting",
+          "Tailor 3 resume lines",
+          "Submit"
+        ],
+        "medium": [
+          "Open the posting",
+          "Note the 3 key asks",
+          "Tailor 3 resume lines",
+          "Write a 5-line cover note",
+          "Attach both files",
+          "Submit before re-reading"
+        ],
+        "spicy": [
+          "Open the posting",
+          "Note the 3 key asks",
+          "Find your matching stories",
+          "Tailor 3 resume lines",
+          "Fix the dates once",
+          "Write a 5-line cover note",
+          "Read it out loud once",
+          "Attach the resume",
+          "Attach the cover note",
+          "Fill the form fields",
+          "Submit before re-reading",
+          "Log the application somewhere"
+        ]
+      }
+    },
+    {
+      "id": "paperwork",
+      "keywords": [
+        "form",
+        "paperwork",
+        "documents",
+        "fill out",
+        "application form",
+        "insurance",
+        "tax"
+      ],
+      "steps": {
+        "mild": [
+          "Find the form",
+          "Fill the easy fields",
+          "List what's missing"
+        ],
+        "medium": [
+          "Find the form",
+          "Fill the easy fields",
+          "List the hard fields",
+          "Hunt one missing document",
+          "Fill one hard field",
+          "Park it with a note if stuck"
+        ],
+        "spicy": [
+          "Find the form",
+          "Fill the easy fields",
+          "List the hard fields",
+          "List the missing documents",
+          "Hunt document one",
+          "Hunt document two",
+          "Fill hard field one",
+          "Fill hard field two",
+          "Check the whole form once",
+          "Sign or submit",
+          "File the confirmation",
+          "Shred or archive the scraps"
+        ]
+      }
+    },
+    {
+      "id": "bills",
+      "keywords": [
+        "bill",
+        "pay",
+        "payment",
+        "rent",
+        "invoice",
+        "transfer"
+      ],
+      "steps": {
+        "mild": [
+          "Open the bill",
+          "Check the amount",
+          "Pay it"
+        ],
+        "medium": [
+          "Open the bill",
+          "Check the amount",
+          "Check the due date",
+          "Pay it",
+          "Save the confirmation",
+          "File or bin the paper"
+        ],
+        "spicy": [
+          "Open the bill",
+          "Check the amount",
+          "Check the due date",
+          "Check the account it leaves from",
+          "Open the banking app",
+          "Pay it",
+          "Screenshot the confirmation",
+          "Save it to the folder",
+          "File or bin the paper",
+          "Note the next bill date",
+          "Set the next-bill reminder"
+        ]
+      }
+    },
+    {
+      "id": "budget",
+      "keywords": [
+        "budget",
+        "money",
+        "spending",
+        "finance",
+        "expenses"
+      ],
+      "steps": {
+        "mild": [
+          "Open the bank app",
+          "Skim the last week",
+          "Note one pattern"
+        ],
+        "medium": [
+          "Open the bank app",
+          "Skim the last month",
+          "Note the 3 biggest",
+          "Pick one to trim",
+          "Set one reminder to check again",
+          "Check any autopay dates"
+        ],
+        "spicy": [
+          "Open the bank app",
+          "Skim the last month",
+          "Note the 3 biggest",
+          "Note the silly smalls",
+          "Cancel one subscription",
+          "Pick one to trim",
+          "Write the number down",
+          "Move a little to savings",
+          "Set one reminder",
+          "Tell one person the plan",
+          "Check any autopay dates"
+        ]
+      }
+    },
+    {
+      "id": "groceries",
+      "keywords": [
+        "groceries",
+        "grocery",
+        "shopping list",
+        "supermarket",
+        "food shop"
+      ],
+      "steps": {
+        "mild": [
+          "List 10 items",
+          "Grab bags",
+          "Shop the list only"
+        ],
+        "medium": [
+          "Check the fridge",
+          "List 10 items",
+          "Add the staples",
+          "Grab bags",
+          "Shop the list only",
+          "Put away the cold things first"
+        ],
+        "spicy": [
+          "Check the fridge",
+          "Check the cupboards",
+          "List 10 items",
+          "Add the staples",
+          "Add one treat",
+          "Check the budget number",
+          "Grab bags",
+          "Shop the list only",
+          "Skip one impulse item",
+          "Put away the cold things",
+          "Put away the rest",
+          "Note next week's missing thing"
+        ]
+      }
+    },
+    {
+      "id": "errand",
+      "keywords": [
+        "errand",
+        "post office",
+        "pharmacy",
+        "pickup",
+        "drop off",
+        "bank branch",
+        "parcel"
+      ],
+      "steps": {
+        "mild": [
+          "Find the opening hours",
+          "Collect the thing",
+          "Go before you reconsider"
+        ],
+        "medium": [
+          "Find the opening hours",
+          "Collect the thing",
+          "Note the deadline",
+          "Grab keys, wallet, phone",
+          "Go before you reconsider",
+          "Tick it off loudly"
+        ],
+        "spicy": [
+          "Find the opening hours",
+          "Note the deadline",
+          "Collect the thing",
+          "Collect the receipt if any",
+          "Grab keys",
+          "Grab wallet",
+          "Grab phone",
+          "Set a 15-minute leave-by alarm",
+          "Leave at the alarm",
+          "Do the errand",
+          "Come back",
+          "Tick it off loudly"
+        ]
+      }
+    },
+    {
+      "id": "cook",
+      "keywords": [
+        "cook",
+        "dinner",
+        "meal",
+        "recipe",
+        "make food",
+        "lunch"
+      ],
+      "steps": {
+        "mild": [
+          "Pick the recipe",
+          "Lay out the ingredients",
+          "Cook the one step at a time"
+        ],
+        "medium": [
+          "Pick the recipe",
+          "Lay out the ingredients",
+          "Prep the chopping",
+          "Start the pan or oven",
+          "Cook the main step",
+          "Plate it simply"
+        ],
+        "spicy": [
+          "Pick the recipe",
+          "Read it once fully",
+          "Lay out the ingredients",
+          "Preheat if needed",
+          "Chop the vegetables",
+          "Season the protein",
+          "Start the pan",
+          "Set a cooking timer",
+          "Cook the main step",
+          "Check the timer",
+          "Plate it simply",
+          "Soak the pan while eating"
+        ]
+      }
+    },
+    {
+      "id": "mealprep",
+      "keywords": [
+        "meal prep",
+        "batch cook",
+        "meal plan"
+      ],
+      "steps": {
+        "mild": [
+          "Pick 2 repeatable meals",
+          "Cook one big batch",
+          "Portion 3 boxes"
+        ],
+        "medium": [
+          "Pick 2 repeatable meals",
+          "Write the 2 shopping lists as one",
+          "Shop once",
+          "Cook batch one",
+          "Cook batch two",
+          "Portion 5 boxes",
+          "Label the lids"
+        ],
+        "spicy": [
+          "Pick 2 repeatable meals",
+          "Write the combined list",
+          "Check what you own",
+          "Shop once",
+          "Preheat or lay out pots",
+          "Chop everything once",
+          "Cook batch one",
+          "Set its timer",
+          "Cook batch two",
+          "Portion the boxes",
+          "Label the lids",
+          "Freeze half",
+          "Clean the kitchen quickly"
+        ]
+      }
+    },
+    {
+      "id": "health_meds",
+      "keywords": [
+        "medication",
+        "meds",
+        "pills",
+        "prescription",
+        "refill",
+        "vitamins"
+      ],
+      "steps": {
+        "mild": [
+          "Check the pill count",
+          "Take today's dose",
+          "Set tomorrow's reminder"
+        ],
+        "medium": [
+          "Check the pill count",
+          "Take today's dose",
+          "Set tomorrow's reminder",
+          "Count the days left",
+          "Order the refill if < 7",
+          "Put the refill date somewhere visible"
+        ],
+        "spicy": [
+          "Check the pill count",
+          "Take today's dose",
+          "Glass of water after",
+          "Set tomorrow's reminder",
+          "Count the days left",
+          "Order the refill if < 7",
+          "Note the pharmacy number",
+          "Put the refill date somewhere visible",
+          "Tell one person the routine",
+          "Find the refill site",
+          "Check the dosage label once"
+        ]
+      }
+    },
+    {
+      "id": "appointment",
+      "keywords": [
+        "appointment",
+        "book",
+        "schedule",
+        "dentist",
+        "doctor",
+        "checkup"
+      ],
+      "steps": {
+        "mild": [
+          "Find the number",
+          "Pick two good times",
+          "Call and book one"
+        ],
+        "medium": [
+          "Find the number",
+          "Pick two good times",
+          "Check insurance or card",
+          "Call and book one",
+          "Write it in the calendar",
+          "Set a day-before reminder"
+        ],
+        "spicy": [
+          "Find the number",
+          "Pick two good times",
+          "Check insurance or card",
+          "Find the card",
+          "Call and book one",
+          "Write it in the calendar",
+          "Set a day-before reminder",
+          "Set a leave-early reminder",
+          "Note what to bring",
+          "Put the address in maps",
+          "Confirm the booking text"
+        ]
+      }
+    },
+    {
+      "id": "exercise",
+      "keywords": [
+        "exercise",
+        "workout",
+        "gym",
+        "run",
+        "training",
+        "stretch",
+        "yoga",
+        "move"
+      ],
+      "steps": {
+        "mild": [
+          "Put on the shoes",
+          "Do 5 minutes",
+          "Stop proud, not empty"
+        ],
+        "medium": [
+          "Put on the shoes",
+          "Set a 10-minute cap",
+          "Warm up 2 minutes",
+          "Do the main 5 minutes",
+          "Cool down 2 minutes",
+          "Water now"
+        ],
+        "spicy": [
+          "Put on the shoes",
+          "Fill the bottle",
+          "Set a 10-minute cap",
+          "Warm up shoulders",
+          "Warm up hips",
+          "Do 10 squats",
+          "Do 10 push-ups or knee ones",
+          "Do a 1-minute plank",
+          "Walk one lap",
+          "Stretch the tight bit",
+          "Water now",
+          "Stop proud, not empty"
+        ]
+      }
+    },
+    {
+      "id": "pack",
+      "keywords": [
+        "pack",
+        "suitcase",
+        "travel",
+        "trip",
+        "bag"
+      ],
+      "steps": {
+        "mild": [
+          "List the 3 essentials",
+          "Lay them out",
+          "Bag them"
+        ],
+        "medium": [
+          "Check the weather there",
+          "List the 3 essentials",
+          "Add clothes for the days",
+          "Add chargers and meds",
+          "Bag them",
+          "Note the check-in time"
+        ],
+        "spicy": [
+          "Check the weather there",
+          "List the 3 essentials",
+          "Count the days",
+          "Lay out clothes for each",
+          "Roll them into the bag",
+          "Add the chargers",
+          "Add the meds",
+          "Add the documents",
+          "Add one comfort item",
+          "Weigh or lift the bag",
+          "Note the check-in time",
+          "Set a leave-early alarm"
+        ]
+      }
+    },
+    {
+      "id": "creative",
+      "keywords": [
+        "draw",
+        "paint",
+        "music",
+        "practice",
+        "guitar",
+        "piano",
+        "art",
+        "craft",
+        "write song"
+      ],
+      "steps": {
+        "mild": [
+          "Open the instrument or page",
+          "Do 5 minutes of play",
+          "Stop while it's fun"
+        ],
+        "medium": [
+          "Open the instrument or page",
+          "Warm up 2 minutes",
+          "Pick one tiny piece",
+          "Work only that piece",
+          "Stop while it's fun",
+          "Note the spark for next time"
+        ],
+        "spicy": [
+          "Open the instrument or page",
+          "Warm up 2 minutes",
+          "Pick one tiny piece",
+          "Play it once badly",
+          "Play it once better",
+          "Isolate the hard bar",
+          "Loop the hard bar 5 times",
+          "Play the whole piece",
+          "Record 30 seconds",
+          "Listen back once",
+          "Note the spark for next time"
+        ]
+      }
+    },
+    {
+      "id": "pet",
+      "keywords": [
+        "dog",
+        "cat",
+        "pet",
+        "walk the dog",
+        "litter",
+        "feed"
+      ],
+      "steps": {
+        "mild": [
+          "Food bowl",
+          "Water bowl",
+          "One play or walk"
+        ],
+        "medium": [
+          "Food bowl",
+          "Water bowl",
+          "Quick brush",
+          "One play or walk",
+          "Check the supplies",
+          "Note what runs out"
+        ],
+        "spicy": [
+          "Food bowl",
+          "Water bowl",
+          "Quick brush",
+          "Grab the lead",
+          "Walk the block",
+          "Play 5 minutes",
+          "Wipe the paws",
+          "Check the food stock",
+          "Check the litter or yard",
+          "Note what runs out",
+          "Order it if low"
+        ]
+      }
+    },
+    {
+      "id": "plants",
+      "keywords": [
+        "plants",
+        "water the plants",
+        "garden",
+        "repot",
+        "watering"
+      ],
+      "steps": {
+        "mild": [
+          "Fill the can",
+          "Water the thirsty ones",
+          "Remove one dead leaf"
+        ],
+        "medium": [
+          "Fill the can",
+          "Water the thirsty ones",
+          "Check the drainage trays",
+          "Remove dead leaves",
+          "Open the curtains for them",
+          "Mist the leaves once"
+        ],
+        "spicy": [
+          "Fill the can",
+          "Water the thirsty ones",
+          "Empty the trays",
+          "Remove dead leaves",
+          "Check for pests once",
+          "Wipe one dusty leaf",
+          "Turn the pots a quarter",
+          "Note who needs repotting",
+          "Open the curtains for them",
+          "Mist the leaves once",
+          "Group the pots for humidity"
+        ]
+      }
+    },
+    {
+      "id": "car",
+      "keywords": [
+        "car",
+        "vehicle",
+        "oil",
+        "tyres",
+        "tires",
+        "service",
+        "mot"
+      ],
+      "steps": {
+        "mild": [
+          "Check the tyre look",
+          "Check the fuel level",
+          "Book service if due"
+        ],
+        "medium": [
+          "Check the tyres by look",
+          "Check the tyre pressures",
+          "Check the oil",
+          "Check the fuel level",
+          "Tidy the inside once",
+          "Book service if due"
+        ],
+        "spicy": [
+          "Check the tyres by look",
+          "Check the pressures",
+          "Top up the air if soft",
+          "Check the oil",
+          "Top up if low",
+          "Check the coolant",
+          "Check the fuel level",
+          "Fill the washer fluid",
+          "Tidy the inside once",
+          "Note the service date",
+          "Book service if due"
+        ]
+      }
+    },
+    {
+      "id": "selfcare",
+      "keywords": [
+        "shower",
+        "self-care",
+        "skincare",
+        "rest",
+        "nap",
+        "relax",
+        "brain break"
+      ],
+      "steps": {
+        "mild": [
+          "Stand up",
+          "Water first",
+          "Shower or rest — pick the kinder one"
+        ],
+        "medium": [
+          "Stand up",
+          "Water first",
+          "Open a window",
+          "Shower or rest — pick the kinder one",
+          "Five minutes of nothing",
+          "Back to it gently"
+        ],
+        "spicy": [
+          "Stand up",
+          "Water first",
+          "Open a window",
+          "Put the phone face down",
+          "Shower or rest — pick the kinder one",
+          "Five minutes of nothing",
+          "Stretch the neck",
+          "Stretch the shoulders",
+          "One snack",
+          "Back to it gently",
+          "Breathe out longer than in"
+        ]
+      }
+    },
+    {
+      "id": "admin_digital",
+      "keywords": [
+        "password",
+        "account",
+        "backup",
+        "update",
+        "unsubscribe",
+        "files",
+        "photos",
+        "declutter phone"
+      ],
+      "steps": {
+        "mild": [
+          "Pick the one account",
+          "Do the thing",
+          "Log out safe"
+        ],
+        "medium": [
+          "Pick the one account",
+          "Do the thing",
+          "Save the change somewhere",
+          "Log out safe",
+          "Note the next one",
+          "Delete 10 old photos"
+        ],
+        "spicy": [
+          "Pick the one account",
+          "Open it",
+          "Do the thing",
+          "Save the change somewhere",
+          "Log out safe",
+          "Delete 10 old photos",
+          "Delete 10 more",
+          "Unsubscribe from 3 lists",
+          "Note the next one",
+          "Close just 5 old tabs",
+          "Clear one notification pile"
+        ]
+      }
+    }
+  ]
+}

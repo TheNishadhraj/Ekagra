@@ -49,9 +49,11 @@ class FeatureFlags {
   /// The spec calls for GPT-4o-mini; there is no HTTP client in pubspec.
   static const aiTaskSelection = FeatureMaturity.simulated;
 
-  /// Same engine, same caveat — `breakdownTask` returns canned templates
-  /// matched on keywords.
-  static const aiTaskBreakdown = FeatureMaturity.simulated;
+  /// LIVE since WI-3.1: the Pro-gated "Task breakdown" is now the real
+  /// local decomposer (see taskDecomposition). The flag keeps its
+  /// historical name so the paywall matrix is unchanged; the honest
+  /// label ("smart, on-device") stays.
+  static const aiTaskBreakdown = FeatureMaturity.live;
 
   /// Not implemented on either platform.
   static const widgets = FeatureMaturity.unbuilt;
@@ -63,6 +65,13 @@ class FeatureFlags {
   /// continuity — and none claimed. Round-trip coverage lives in
   /// test/export_test.dart.
   static const dataExport = FeatureMaturity.live;
+
+  /// LIVE since WI-3.1 (2026-08-26): local task decomposition + one-step
+  /// execution mode. 32 template families x 3 spiciness levels as data
+  /// (assets/templates/task_breakdown_templates.json), generic 2-minute-
+  /// rule fallback, quick-tier micro-ticks per step. No network, no
+  /// model, honestly labelled ("built from patterns, runs on your phone").
+  static const taskDecomposition = FeatureMaturity.live;
 
   /// Voice "yap mode": NOT BUILT, and no UI implies otherwise. The old
   /// Brain Dump mic button used to *simulate* listening for 2 seconds and

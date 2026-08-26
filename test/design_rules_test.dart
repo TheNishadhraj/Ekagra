@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:ekagra/config/feature_flags.dart';
@@ -274,6 +275,27 @@ void main() {
     test('every nudge copy rotation is shame-free', () {
       for (final s in NudgeCopy.allStrings) {
         expect(RsdSafeCopy.isSafe(s), isTrue, reason: '"$s"');
+      }
+    });
+
+    test('every decomposition step string is shame-free', () {
+      // Template data is user-facing (it renders in execution mode) but
+      // lives in an asset the source extractor cannot see. Assert it here.
+      final raw = jsonDecode(
+        File('assets/templates/task_breakdown_templates.json')
+            .readAsStringSync(),
+      ) as Map<String, dynamic>;
+      final strings = <String>[
+        for (final f in (raw['families'] as List).cast<Map<String, dynamic>>())
+          for (final sp in (f['steps'] as Map<String, dynamic>).values)
+            ...((sp as List).cast<String>()),
+        ...((raw['generic'] as Map<String, dynamic>)
+            .values
+            .expand((e) => (e as List).cast<String>())),
+      ];
+      expect(strings.length, greaterThan(300));
+      for (final step in strings) {
+        expect(RsdSafeCopy.isSafe(step), isTrue, reason: '"$step"');
       }
     });
 

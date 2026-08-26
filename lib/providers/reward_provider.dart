@@ -64,6 +64,20 @@ class RewardProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// WI-3.1: a completed decomposition step earns a quick-tier micro-tick
+  /// (inline, no reveal screen). Variable-ratio spins stay reserved for
+  /// whole-task completion — scarcity is what makes them work.
+  Future<void> recordStepCompleted(String taskId, {String? taskTitle}) async {
+    final reward = _engine.rollQuick(
+      menu: _menu,
+      relatedTaskId: taskId,
+      relatedTaskTitle: taskTitle,
+    );
+    _history = [reward, ..._history];
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> recordTaskCompletion(String taskId) async {
     // Variable ratio reinforcement (1 to 4 tasks)
     final reward = _engine.roll(

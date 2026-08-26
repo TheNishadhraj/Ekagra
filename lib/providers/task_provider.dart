@@ -161,6 +161,9 @@ class TaskProvider extends ChangeNotifier {
     if (idx < 0) return;
     final now = DateTime.now();
     final task = _tasks[idx];
+    // Idempotent (WI-3.1): completing an already-completed task must be a
+    // no-op — one task completion, one variable-ratio reward, ever.
+    if (task.isCompleted) return;
     _tasks[idx] = task.copyWith(
       status: TaskStatus.completed,
       completedAt: now,
