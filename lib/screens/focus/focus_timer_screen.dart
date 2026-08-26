@@ -73,15 +73,6 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
               },
             ),
             ListTile(
-              leading: const Text('🤝', style: TextStyle(fontSize: 22)),
-              title: const Text('Body double with someone'),
-              subtitle: const Text('Focus alongside 100+ active users'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.pushNamed(context, AppRoutes.bodyDouble);
-              },
-            ),
-            ListTile(
               leading: const Text('⏸', style: TextStyle(fontSize: 22)),
               title: const Text('Take a break'),
               subtitle: const Text('Pause timer for a quick 5-min breather'),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../screens/body_double/body_double_screen.dart';
 import '../screens/brain_dump/brain_dump_screen.dart';
 import '../screens/focus/focus_complete_screen.dart';
 import '../screens/focus/focus_timer_screen.dart';
@@ -34,7 +33,6 @@ class AppRoutes {
   static const focusComplete = '/focus-complete';
   static const rewardReveal = '/reward-reveal';
   static const timeline = '/timeline';
-  static const bodyDouble = '/body-double';
   static const someday = '/someday';
   static const settings = '/settings';
   static const growthDashboard = '/settings/growth';
@@ -77,8 +75,6 @@ class AppRoutes {
         return _fade(RewardRevealScreen(reward: reward), routeSettings);
       case timeline:
         return _slide(const DayViewScreen(), routeSettings);
-      case bodyDouble:
-        return _slide(const BodyDoubleScreen(), routeSettings);
       case someday:
         return _slide(const SomedayListScreen(), routeSettings);
       case settings:

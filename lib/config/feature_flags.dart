@@ -39,10 +39,14 @@ enum FeatureMaturity {
 class FeatureFlags {
   FeatureFlags._();
 
-  /// Body doubling: `_roomCount = 127` is a literal. There is no room, no
-  /// presence service, no other participants. Cheers are appended to a local list and
-  /// delivered to nobody.
-  static const bodyDoubling = FeatureMaturity.simulated;
+  /// Body doubling ("Focus Caves"): NOT BUILT — cut by ADR-006 with the
+  /// Phase-4 decision gate. There is no room, no backend, no presence
+  /// data, and the simulated screen was removed rather than left to
+  /// imply otherwise. Rebuild checklist (moderation spec first, LiveKit
+  /// self-host vs Cloud decision, avatar-first presence, room caps, no
+  /// DMs in V1) lives in ADR-006 + RISK-12/13. Stays `unbuilt` — and
+  /// therefore non-billable — until a real room works end-to-end.
+  static const bodyDoubling = FeatureMaturity.unbuilt;
 
   /// "AI" task selection is a deterministic local scoring function in
   /// `AiService._score`. It is genuinely useful and it is genuinely not AI.
