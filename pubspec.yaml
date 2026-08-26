@@ -16,6 +16,11 @@ dependencies:
   shared_preferences: ^2.3.3
   google_fonts: ^6.2.1
   flutter_animate: ^4.5.2
+  # WI-1.1 (K18 fix): real local export — documents dir + OS share sheet.
+  # Both are first-party Flutter favorites with stable APIs; the export
+  # feature degrades honestly (error snackbar) if either is unavailable.
+  path_provider: ^2.1.4
+  share_plus: ^10.0.2
 
 dev_dependencies:
   flutter_test:

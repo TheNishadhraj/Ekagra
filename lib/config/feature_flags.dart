@@ -56,8 +56,13 @@ class FeatureFlags {
   /// Not implemented on either platform.
   static const widgets = FeatureMaturity.unbuilt;
 
-  /// Local-only: no cloud sync, no cross-device continuity.
-  static const dataExport = FeatureMaturity.simulated;
+  /// LIVE since the K18 fix (2026-08-26): "Export My Data" serializes
+  /// tasks, rewards, energy/mood logs and profile to a real JSON file in
+  /// the app documents directory (plus a tasks CSV) and hands it to the OS
+  /// share sheet. Still local-only: no cloud sync, no cross-device
+  /// continuity — and none claimed. Round-trip coverage lives in
+  /// test/export_test.dart.
+  static const dataExport = FeatureMaturity.live;
 
   /// These are real, local-first, and work exactly as advertised.
   static const unlimitedTasks = FeatureMaturity.live;
