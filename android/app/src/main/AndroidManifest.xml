@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- WI-1.4 gentle nudges: local notifications only. Android 13+ requires
+         the runtime POST_NOTIFICATIONS grant, requested in onboarding with
+         the "gentle nudges" explanation — never silently. No exact-alarm
+         permission is requested: nudges are deliberately inexact. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="ekagra"
         android:name="${applicationName}"

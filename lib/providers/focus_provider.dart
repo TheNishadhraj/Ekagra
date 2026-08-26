@@ -9,6 +9,7 @@ import '../models/focus_session_model.dart';
 import '../models/task_model.dart';
 import '../services/analytics_service.dart';
 import '../services/growth_service.dart';
+import '../services/nudge_service.dart';
 import '../utils/date_helpers.dart';
 import '../utils/safe_store.dart';
 import 'reward_provider.dart';
@@ -119,6 +120,7 @@ class FocusProvider extends ChangeNotifier {
           pausedAt: null,
         );
     _persistSession();
+    unawaited(NudgeService.instance.scheduleTransitionAlert(_session!));
     _startTicker();
     notifyListeners();
   }
@@ -132,6 +134,7 @@ class FocusProvider extends ChangeNotifier {
       pausedAt: DateTime.now(),
     );
     _ticker?.cancel();
+    unawaited(NudgeService.instance.cancelTransitionAlert());
     _persistSession();
     notifyListeners();
   }
@@ -151,12 +154,14 @@ class FocusProvider extends ChangeNotifier {
           _session!.accumulatedPausedSeconds + pauseDuration.inSeconds,
     );
     _persistSession();
+    unawaited(NudgeService.instance.scheduleTransitionAlert(_session!));
     _startTicker();
     notifyListeners();
   }
 
   void abandon() {
     _ticker?.cancel();
+    unawaited(NudgeService.instance.cancelTransitionAlert());
     if (_session != null) {
       _session = _session!.copyWith(status: FocusSessionStatus.abandoned);
     }
@@ -174,6 +179,7 @@ class FocusProvider extends ChangeNotifier {
         _session!.remaining().inMinutes.clamp(0, _session!.plannedMinutes);
     _todayFocusMinutes += elapsed > 0 ? elapsed : _session!.plannedMinutes;
     _session = _session!.copyWith(status: FocusSessionStatus.completed);
+    unawaited(NudgeService.instance.cancelTransitionAlert());
     _persistTodayMinutes();
     _clearPersistedSession();
     notifyListeners();

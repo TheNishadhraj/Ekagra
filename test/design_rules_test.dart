@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:ekagra/config/feature_flags.dart';
 import 'package:ekagra/services/analytics_service.dart';
 import 'package:ekagra/services/monetization_service.dart';
+import 'package:ekagra/services/nudge_copy.dart';
 import 'package:ekagra/utils/rsd_safe_copy.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -263,6 +264,25 @@ void main() {
         reason: 'Tasks are soft-deleted (isDeleted / archived) so a user '
             'never loses a thought. Offenders: $offenders',
       );
+    });
+  });
+
+  group('Rule 15 — string banks outside the widget tree', () {
+    // The source extractor above scans screens/widgets/utils/config. Copy
+    // that lives in services (notification banks, celebrations) is equally
+    // user-facing, so it is asserted here by name instead.
+    test('every nudge copy rotation is shame-free', () {
+      for (final s in NudgeCopy.allStrings) {
+        expect(RsdSafeCopy.isSafe(s), isTrue, reason: '"$s"');
+      }
+    });
+
+    test('no nudge copy claims unsupported intelligence', () {
+      final aiClaim =
+          RegExp(r'\bA\.?I\.?\b|artificial intelligence|GPT', caseSensitive: false);
+      for (final s in NudgeCopy.allStrings) {
+        expect(aiClaim.hasMatch(s), isFalse, reason: '"$s"');
+      }
     });
   });
 

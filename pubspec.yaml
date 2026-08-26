@@ -21,6 +21,13 @@ dependencies:
   # feature degrades honestly (error snackbar) if either is unavailable.
   path_provider: ^2.1.4
   share_plus: ^10.0.2
+  # WI-1.4: local-only gentle nudges (the #1 research wishlist ask).
+  # flutter_local_notifications is the de-facto standard plugin; pinned to
+  # the 17.x line whose API the single adapter file is written against.
+  # timezone is its scheduling companion (tz-aware datetimes). No backend,
+  # no push service — everything is scheduled on-device.
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:

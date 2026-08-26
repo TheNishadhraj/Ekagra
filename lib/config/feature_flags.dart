@@ -64,6 +64,13 @@ class FeatureFlags {
   /// test/export_test.dart.
   static const dataExport = FeatureMaturity.live;
 
+  /// LIVE since WI-1.4 (2026-08-26): real local notifications via
+  /// flutter_local_notifications — per-task gentle nudge sequence (max 3,
+  /// then stops silently), one optional daily brief, one welcome-back
+  /// nudge after a 3-day gap, and a 15-min-left focus transition alert.
+  /// Local scheduling only; no push service, no backend, opt-out stops all.
+  static const nudges = FeatureMaturity.live;
+
   /// These are real, local-first, and work exactly as advertised.
   static const unlimitedTasks = FeatureMaturity.live;
   static const allFocusDurations = FeatureMaturity.live;

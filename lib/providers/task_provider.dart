@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ import '../services/ai_service.dart';
 import '../services/analytics_service.dart';
 import '../services/growth_service.dart';
 import '../services/monetization_service.dart';
+import '../services/nudge_service.dart';
 import '../utils/safe_store.dart';
 
 class TaskProvider extends ChangeNotifier {
@@ -165,6 +167,10 @@ class TaskProvider extends ChangeNotifier {
       updatedAt: now,
       lastTouchedAt: now,
     );
+
+    // Completing a task cancels its pending nudges (WI-1.4): the nudge
+    // sequence must never congratulate itself into an empty room.
+    unawaited(NudgeService.instance.cancelTaskNudges(id));
 
     // North Star event: a task actually finished.
     track(Ev.taskCompleted, {

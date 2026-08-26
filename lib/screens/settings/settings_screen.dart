@@ -13,6 +13,7 @@ import '../../providers/task_provider.dart';
 import '../../services/analytics_service.dart';
 import '../../services/export_service.dart';
 import '../../services/monetization_service.dart';
+import '../../services/nudge_service.dart';
 import '../../utils/rsd_safe_copy.dart';
 import '../shared/ekagra_paywall_sheet.dart';
 
@@ -129,11 +130,20 @@ class SettingsScreen extends StatelessWidget {
               subtitle: const Text('Max 3 friendly reminders per day'),
               value: settings.notificationsEnabled,
               activeThumbColor: EkagraColors.primary,
-              onChanged: (val) {
+              onChanged: (val) async {
+                // WI-1.4: the switch is real now — it gates actual local
+                // notifications, and turning it off cancels everything
+                // pending (test-enforced).
                 if (val) {
-                  settings.enableNotifications();
+                  await NudgeService.instance.requestPermission();
+                  await settings.enableNotifications();
+                  await NudgeService.instance.enabledSet(true);
+                  await NudgeService.instance.scheduleDailyBrief(
+                    hour: settings.user.notifications.morning.hour,
+                  );
                 } else {
-                  settings.disableNotifications();
+                  await settings.disableNotifications();
+                  await NudgeService.instance.enabledSet(false);
                 }
               },
             ),
