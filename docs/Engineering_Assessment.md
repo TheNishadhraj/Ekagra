@@ -168,3 +168,35 @@ without reading.
   body doubling was billable. I updated them to assert the new, correct
   behaviour — worth a careful read in review, since "agent edited the tests
   until they passed" is a legitimate thing to be suspicious of.
+
+### Update — 2026-08-26 (WI-0.1 execution attempt)
+
+WI-0.1 of the Gap Solutions work order asks the implementation agent to
+install Flutter and run the suite. **The implementation environment had no
+Dart/Flutter toolchain and no pub.dev egress (DNS resolves; TCP connections
+are blocked), so installing the SDK was not possible and the suite remains
+unexecuted there.** Verification for the Gap Solutions changes is the same
+static regime this document describes (delimiter lexing, import resolution,
+exhaustive-switch checks, careful review), kept in-tree as
+`tools/static_verify.py`.
+
+What *did* land from WI-0.1:
+
+- The pipeline move to `.github/workflows/ci.yml` was attempted and
+  **rejected twice by GitHub** (git push and the REST API both refuse
+  workflow-file writes without `workflows` permission — exactly what
+  `ci/README.md` predicted). The one manual step remains: from an account
+  with normal repo write access run
+  `git mv ci/github-workflow-ci.yml .github/workflows/ci.yml && git commit -m "Enable CI" && git push`.
+  Until then the gates do not run on PRs, and the caveat below stands.
+- `tools/static_verify.py` re-implements the CI checks statically
+  (delimiter-balance lexer, import resolution, Rule 3 red grep, print()
+  grep, shame-copy extraction, AI-claim scan) so pre-push verification is
+  mechanical rather than aspirational.
+- The missing `assets/images|animations|sounds` directories (declared in
+  pubspec, absent on disk — a hard `flutter build` failure) were created.
+- The Gap Solutions work order is saved verbatim at
+  `docs/IMPLEMENTATION_PROMPT.md`.
+- **The first green run of the real pipeline is the moment this section's
+  caveat can be retired.** If it surfaces failures, fix forward on the same
+  branch; do not weaken the gates.
