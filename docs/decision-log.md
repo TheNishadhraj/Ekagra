@@ -140,3 +140,57 @@ minutes and got a phone call that killed the app lost everything.
   only new event; logged here per the work order's documentation duty.
 - Reward idempotency is enforced for the reconcile path; the live path
   already fires rewards from UI completion exactly once.
+
+---
+
+## ADR-008 — Onboarding reflow: 3 effective steps, real notifications, no paywall route
+
+**Date:** 2026-08-26
+**Status:** Accepted
+**Reversible:** Yes
+
+### Context
+Research (Goblin Tools: "most productivity apps lose ADHD users during
+onboarding"; Finch billing-trap reviews) plus defects K18/K19 made the old
+4-step onboarding indefensible: a dopamine-menu questionnaire the user had
+no stake in yet, a notifications screen promising nudges that did not
+exist, and a full-screen paywall before the user had felt any value —
+contradicting the no-pressure brand while the soft task cap
+(`TaskProvider.atFreeTaskLimit`) already converts at the moment of value.
+
+### Decision
+1. **Dopamine Menu is one tap by default.** Pre-filled from
+   `DopamineMenu.defaults`; tuning is an optional disclosure on the same
+   screen and remains reachable in Settings. Effective steps: ADHD type
+   (feeds the scorer), dopamine (one tap), notifications (real).
+2. **Notifications step is real** (requires WI-1.4): it requests the OS
+   permission, arms the daily brief, and its "later" path leaves
+   notifications fully off (Rule 11).
+3. **The onboarding paywall route is removed**
+   (`paywall_screen.dart` deleted; `AppRoutes.paywall` no longer exists).
+   Conversion remains with the contextual soft cap + `EkagraPaywallSheet`.
+   `PaywallTrigger.onboarding` stays in the enum (append-only event/enum
+   discipline) but is no longer reachable from the UI.
+4. **Welcome-back state:** after a ≥3-day gap with content, one gentle
+   screen — "Nothing was lost." — shown at most once per gap, measured
+   against the previous active day captured before today's touch.
+5. `Experiments.paywallTiming` ('onboarding' vs 'post_first_value') is
+   retired in effect: its treatment arm is now the only behaviour. The
+   registration is kept for history; do not re-arm it without revisiting
+   this ADR.
+
+### Alternatives considered
+- **Keep the paywall behind an experiment flag** — rejected: a paywall
+  reachable during onboarding contradicts Rule 8's spirit even at 50%
+  traffic, and the experiment's premise (ask before value) is what the
+  evidence refutes.
+- **Ask for notifications pre-permission at first launch** — rejected:
+  consent before explanation is the dark-pattern flavour of permission
+  requests.
+
+### Consequences
+- Onboarding completes in ~2 minutes with every step skippable.
+- "Gentle nudges" copy in onboarding is finally true (WI-1.4 engine).
+- One conversion moment is deliberately given up (onboarding paywall) in
+  exchange for brand coherence; the soft cap is the surviving conversion
+  surface and is measured by the existing paywall analytics.

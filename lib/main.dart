@@ -97,6 +97,10 @@ Future<void> main() async {
 
   await growth.recordAppOpen();
 
+  // WI-1.3: keep the welcome-back gap measurement honest — activity today
+  // must not read as activity three days ago.
+  await settings.touchLastActiveAt();
+
   runApp(
     MultiProvider(
       providers: [

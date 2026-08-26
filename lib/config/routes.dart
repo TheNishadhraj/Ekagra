@@ -9,7 +9,7 @@ import '../screens/onboarding/welcome_screen.dart';
 import '../screens/onboarding/adhd_type_screen.dart';
 import '../screens/onboarding/dopamine_menu_setup_screen.dart';
 import '../screens/onboarding/notification_permission_screen.dart';
-import '../screens/onboarding/paywall_screen.dart';
+import '../screens/onboarding/welcome_back_screen.dart';
 import '../screens/rewards/reward_reveal_screen.dart';
 import '../screens/settings/growth_dashboard_screen.dart';
 import '../screens/settings/settings_screen.dart';
@@ -26,7 +26,7 @@ class AppRoutes {
   static const adhdType = '/onboarding/adhd-type';
   static const dopamineSetup = '/onboarding/dopamine';
   static const notificationPermission = '/onboarding/notifications';
-  static const paywall = '/onboarding/paywall';
+  static const welcomeBack = '/welcome-back';
   static const main = '/main';
   static const home = '/home';
   static const brainDump = '/brain-dump';
@@ -49,8 +49,13 @@ class AppRoutes {
         return _slide(const DopamineMenuSetupScreen(), routeSettings);
       case notificationPermission:
         return _slide(const NotificationPermissionScreen(), routeSettings);
-      case paywall:
-        return _slide(const PaywallScreen(), routeSettings);
+      case welcomeBack:
+        return _fade(
+          WelcomeBackScreen(
+            oneThing: routeSettings.arguments as TaskModel?,
+          ),
+          routeSettings,
+        );
       case main:
         return _fade(const MainShell(), routeSettings);
       case brainDump:

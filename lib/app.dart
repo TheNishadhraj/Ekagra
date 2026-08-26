@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'config/routes.dart';
 import 'config/theme.dart';
 import 'providers/settings_provider.dart';
+import 'providers/task_provider.dart';
 
 class EkagraApp extends StatelessWidget {
   const EkagraApp({super.key});
@@ -16,9 +17,19 @@ class EkagraApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
-    final initial = settings.onboardingComplete
-        ? AppRoutes.main
-        : AppRoutes.welcome;
+    final tasks = context.watch<TaskProvider>();
+    final String initial;
+    if (!settings.onboardingComplete) {
+      initial = AppRoutes.welcome;
+    } else if (settings.shouldShowWelcomeBack(
+      hasContent: tasks.tasks.isNotEmpty,
+    )) {
+      // WI-1.3: one gentle screen per >=3-day gap — "Nothing was lost",
+      // which is only ever claimed because SafeStore makes it true.
+      initial = AppRoutes.welcomeBack;
+    } else {
+      initial = AppRoutes.main;
+    }
 
     return MaterialApp(
       navigatorKey: navigatorKey,

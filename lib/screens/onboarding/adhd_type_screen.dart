@@ -67,7 +67,7 @@ class _AdhdTypeScreenState extends State<AdhdTypeScreen> {
     return Scaffold(
       backgroundColor: EkagraColors.background,
       appBar: AppBar(
-        title: const Text('2 of 4'),
+        title: const Text('Step 1 of 3'),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -222,12 +222,7 @@ class _AdhdTypeScreenState extends State<AdhdTypeScreen> {
                   const SizedBox(height: EkagraSpacing.md),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _dot(true),
-                      _dot(true),
-                      _dot(false),
-                      _dot(false),
-                    ],
+                    children: [_dot(true), _dot(false), _dot(false)],
                   ),
                 ],
               ),
