@@ -40,6 +40,12 @@ class Ev {
   static const focusSessionPaused = 'focus_session_paused';
   static const focusSessionCompleted = 'focus_session_completed';
   static const focusSessionAbandoned = 'focus_session_abandoned';
+
+  /// Added 2026-08-26 (WI-1.2/ADR-005): a session that ended while the
+  /// process was dead and was retro-completed at boot. Kept separate from
+  /// [focusSessionCompleted] so dashboards can distinguish live completions
+  /// from reconciled ones without redefining either.
+  static const focusSessionReconciled = 'focus_session_reconciled';
   static const cantFocusTapped = 'cant_focus_tapped';
   static const cantFocusAction = 'cant_focus_action';
   static const hyperfocusDetected = 'hyperfocus_detected';

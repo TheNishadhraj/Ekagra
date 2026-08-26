@@ -93,3 +93,50 @@ The Growth & Monetization audit found 19 P0 findings. The single most important:
 - Paywall copy now matches the actual product.
 - Trial state is tracked locally and can surface "X days left" without a billing SDK.
 - The soft cap converts without punishing.
+
+---
+
+## ADR-005 — Persist the in-flight focus session; reconcile on boot
+
+**Date:** 2026-08-26
+**Status:** Accepted
+**Reversible:** Yes (additive keys; no existing format changed)
+
+### Context
+The wall-clock design already made timer *display* drift impossible
+(`FocusSession.remaining()` is `endsAt - now`, Spec H3). But the in-flight
+session, the day's focus minutes and the session's reward existed only in
+`FocusProvider` memory. ADHD usage patterns — force-quits, OS memory
+pressure, dead batteries — made silent loss a routine event, not an edge
+case (Gap Solutions defect K20, RISK-09). A user who focused for 24 of 25
+minutes and got a phone call that killed the app lost everything.
+
+### Decision
+- Persist the session (`ekagra_focus_session`) and the day's minutes
+  (`ekagra_focus_today_minutes` + day marker) on every state transition.
+- Run `FocusProvider.reconcile()` once at boot, after providers load:
+  - session **ended while dead** → retro-complete once: minutes recorded,
+    reward fired behind a per-session-id idempotency marker
+    (`ekagra_focus_reward_fired_for`), `Ev.focusSessionReconciled` emitted;
+  - session **still running** → restore and tick against the wall clock
+    (zero drift by construction);
+  - **paused** → restore paused;
+  - **corrupt payload** → SafeStore quarantine path; the app boots.
+- Day rollover: stored minutes belong to the stored calendar day;
+  yesterday's minutes never leak into today.
+- The user sees a one-tap acknowledgement on Home ("Focus finished while
+  you were away — N minutes kept, nothing lost."), never an error.
+
+### Alternatives considered
+- **Persist a full session history** — worthwhile later (stats, export
+  parity), deliberately out of scope: this ADR fixes loss, not reporting.
+- **Reconcile inside `load()`** — rejected; reconciliation needs task and
+  reward providers, and `main()` sequencing keeps that coupling explicit.
+
+### Consequences
+- A process kill can no longer lose a session, minutes, or a reward.
+- New analytics event `focus_session_reconciled` (separate from
+  `focus_session_completed` so dashboards can tell them apart). This is the
+  only new event; logged here per the work order's documentation duty.
+- Reward idempotency is enforced for the reconcile path; the live path
+  already fires rewards from UI completion exactly once.

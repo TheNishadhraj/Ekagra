@@ -63,6 +63,11 @@ Future<void> main() async {
     );
   }
 
+  // ADR-005: a focus session that was in flight when the process died is
+  // resumed against the wall clock, or completed retroactively exactly once
+  // (minutes recorded, reward fired at most once per session id).
+  await focus.reconcile(tasks: tasks, rewards: rewards);
+
   await growth.recordAppOpen();
 
   runApp(
