@@ -62,6 +62,15 @@ class FeatureFlags {
   /// Not implemented on either platform.
   static const widgets = FeatureMaturity.unbuilt;
 
+  /// WI-5.1 Gentle Block: NOT BUILT. The Dart decision core
+  /// (gentle_block_gate.dart) and the calm pause screen exist and are
+  /// tested, but the Android accessibility detection layer is not
+  /// wired and no route is registered — a pause screen that never
+  /// pauses would be the K18 pattern. Build spec:
+  /// docs/briefs/gentle-block-build-spec.md. iOS V1 = Focus mode +
+  /// guide flow only (RISK-14 for the Screen Time API track).
+  static const gentleBlock = FeatureMaturity.unbuilt;
+
   /// LIVE since the K18 fix (2026-08-26): "Export My Data" serializes
   /// tasks, rewards, energy/mood logs and profile to a real JSON file in
   /// the app documents directory (plus a tasks CSV) and hands it to the OS
