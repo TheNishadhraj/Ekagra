@@ -64,6 +64,15 @@ class FeatureFlags {
   /// test/export_test.dart.
   static const dataExport = FeatureMaturity.live;
 
+  /// Voice "yap mode": NOT BUILT, and no UI implies otherwise. The old
+  /// Brain Dump mic button used to *simulate* listening for 2 seconds and
+  /// insert a hardcoded item — removed 2026-08-26 as a K18-class honesty
+  /// bug. What IS real today: the on-device transcript parser
+  /// (`VoiceDumpParser`, "Smart split") which turns any typed or pasted
+  /// dump into dated task cards. The whisper.cpp binding (first-run model
+  /// download) is deferred — docs/briefs/voice-yap-mode-brief.md.
+  static const voiceDump = FeatureMaturity.unbuilt;
+
   /// LIVE since WI-1.4 (2026-08-26): real local notifications via
   /// flutter_local_notifications — per-task gentle nudge sequence (max 3,
   /// then stops silently), one optional daily brief, one welcome-back
