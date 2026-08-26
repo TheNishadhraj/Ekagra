@@ -11,11 +11,14 @@ import 'providers/mood_provider.dart';
 import 'providers/reward_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/task_provider.dart';
+import 'config/observability_config.dart';
 import 'services/analytics_service.dart';
+import 'services/crash_reporting.dart';
 import 'services/experiment_service.dart';
 import 'services/growth_service.dart';
 import 'services/monetization_service.dart';
 import 'services/nudge_service.dart';
+import 'services/remote_analytics_sink.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +45,26 @@ Future<void> main() async {
   await analytics.load();
   await experiments.load();
   analytics.addSink(DebugAnalyticsSink());
+
+  // WI-2.3: crash capture rides the same bus — same opt-out, same PII
+  // scrubbing, same local buffer.
+  if (ObservabilityConfig.crashReportingEnabled) {
+    CrashReporter.install();
+  }
+
+  // WI-2.3: remote sink attaches only when configured; an empty key keeps
+  // the build fully offline. Events only ever reach it through track(),
+  // which is consent-gated.
+  if (ObservabilityConfig.apiKey.isNotEmpty) {
+    analytics.addSink(
+      RemoteAnalyticsSink(
+        endpoint: Uri.parse(ObservabilityConfig.endpoint),
+        apiKey: ObservabilityConfig.apiKey,
+        distinctId: experiments.installId,
+      ),
+    );
+  }
+
   analytics.startSession(
     DateTime.now().millisecondsSinceEpoch.toRadixString(36),
   );
@@ -101,20 +124,24 @@ Future<void> main() async {
   // must not read as activity three days ago.
   await settings.touchLastActiveAt();
 
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: settings),
-        ChangeNotifierProvider.value(value: tasks),
-        ChangeNotifierProvider.value(value: energy),
-        ChangeNotifierProvider.value(value: mood),
-        ChangeNotifierProvider.value(value: focus),
-        ChangeNotifierProvider.value(value: rewards),
-        ChangeNotifierProvider.value(value: money),
-        ChangeNotifierProvider.value(value: growth),
-        ChangeNotifierProvider.value(value: experiments),
-      ],
-      child: const EkagraApp(),
+  // Zones catch what frames miss; CrashReporter converts them to events.
+  runZonedGuarded(
+    () => runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: settings),
+          ChangeNotifierProvider.value(value: tasks),
+          ChangeNotifierProvider.value(value: energy),
+          ChangeNotifierProvider.value(value: mood),
+          ChangeNotifierProvider.value(value: focus),
+          ChangeNotifierProvider.value(value: rewards),
+          ChangeNotifierProvider.value(value: money),
+          ChangeNotifierProvider.value(value: growth),
+          ChangeNotifierProvider.value(value: experiments),
+        ],
+        child: const EkagraApp(),
+      ),
     ),
+    (error, stack) => CrashReporter.reportZoneError(error, stack),
   );
 }

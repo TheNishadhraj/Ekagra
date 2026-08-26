@@ -194,3 +194,44 @@ contradicting the no-pressure brand while the soft task cap
 - One conversion moment is deliberately given up (onboarding paywall) in
   exchange for brand coherence; the soft cap is the surviving conversion
   surface and is measured by the existing paywall analytics.
+
+---
+
+## ADR-009 — Observability: dependency-free HTTP sink + seam-level crash capture
+
+**Date:** 2026-08-26
+**Status:** Accepted (vendor key pending owner — see the brief)
+**Reversible:** Yes
+
+### Context
+RISK-05/08: no analytics sink and no crash reporting. The bus
+(`AnalyticsService`, append-only `Ev.*` registry, opt-out, crash-safe local
+buffer) was built deliberately vendor-free with an `addSink()` seam. The
+work order asks for a real sink + crash reporting; the vendor choice is an
+owner decision and the implementation sandbox had no pub.dev access anyway.
+
+### Decision
+- `RemoteAnalyticsSink`: one-file HTTP implementation of the PostHog batch
+  capture API. Config in `lib/config/observability_config.dart`; **empty
+  key = inert = fully offline build**. Batches ≤40 events / 30 s; failures
+  are silent drops (the local buffer is the durable record).
+- `CrashReporter`: `FlutterError.onError`, `PlatformDispatcher.onError`
+  and a `runZonedGuarded` boundary in `main()` all convert to
+  `Ev.errorOccurred` — inheriting consent, scrubbing and buffering.
+- PII scrubbing at the sink (key-pattern drop) and consent gating at the
+  bus are test-enforced, not aspirational.
+- No new events were added by this ADR (it only consumes existing ones).
+
+### Alternatives considered
+- **Vendor SDKs now (posthog_dart / sentry_flutter)** — deferred to the
+  owner brief: adds dependencies that could not be resolved or honestly
+  verified in the authoring environment, and the seam makes the swap a
+  one-file change later.
+- **Firebase Analytics** — rejected for now: pulls the Firebase init
+  surface into an offline-first app before any user exists.
+
+### Consequences
+- With a key configured, funnels/retention dashboards work day one of the
+  pilot; without one, everything still lands in the local buffer.
+- Native-crash symbolication remains open (RISK-10 residue) until the
+  Sentry/Crashlytics decision.
