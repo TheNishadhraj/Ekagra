@@ -77,6 +77,12 @@ class FeatureFlags {
   /// model, honestly labelled ("built from patterns, runs on your phone").
   static const taskDecomposition = FeatureMaturity.live;
 
+  /// WI-5.3 anti-novelty-decay program: active-days milestones (7/30/100),
+  /// hyperfocus celebrations, monthly dopamine-menu refresh suggestions,
+  /// weekly nudge-copy rotation (shipped with WI-1.4). All local, all real
+  /// — `live`. Every celebration string is Rule-15 tested.
+  static const retentionProgram = FeatureMaturity.live;
+
   /// Voice "yap mode": NOT BUILT, and no UI implies otherwise. The old
   /// Brain Dump mic button used to *simulate* listening for 2 seconds and
   /// insert a hardcoded item — removed 2026-08-26 as a K18-class honesty

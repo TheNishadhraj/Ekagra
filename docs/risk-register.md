@@ -216,3 +216,17 @@ until the owner activates CI, edits should be followed by a local
 an idempotent `completeTask` (asserted exactly-once in
 `decomposition_test`); the residual is a same-second double-tap racing
 two `updateTask` writes — acceptable at single-device scale.
+
+---
+
+## RISK-18 — Milestone double-celebration / growth-key drift (ADR-010)
+
+**Severity:** P3
+**Owner:** Product Owner
+
+`celebratedMilestones` is additive to the growth JSON; a hand-edited or
+partially-written blob could theoretically re-celebrate a milestone
+(decode falls back to `[]`). Impact is one extra kind sheet — no data
+loss, no charge. Fire-once-per-milestone and legacy decode are
+test-enforced (`retention_test.dart`). The clock-dependent arming test
+seeds a fixed past date, so it is stable on any CI runner date.

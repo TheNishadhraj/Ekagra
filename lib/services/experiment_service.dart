@@ -77,6 +77,31 @@ class Experiments {
     guardrailMetrics: ['D7 retention', 'onboarding_abandoned'],
   );
 
+  /// WI-5.3: does a milestone celebration lift the next-week return rate?
+  /// Celebration copy tone: energetic hype vs. quiet warmth. Guardrail:
+  /// celebrations must never read as pressure (Rule 15).
+  static const milestoneTone = Experiment(
+    key: 'milestone_tone_v1',
+    variants: ['energetic', 'warm'],
+    hypothesis:
+        'A warm-tone milestone celebration lifts D7 return after the '
+        'milestone more than energetic tone, because hype fades and '
+        'warmth compounds for an audience wary of being graded.',
+    successMetric: 'app_opened within 7 days of active_day_milestone',
+    guardrailMetrics: ['milestone dismissed without claim', 'opt-outs'],
+  );
+
+  /// WI-5.3: how many menu refresh suggestions before it reads as chores?
+  static const menuRefreshCount = Experiment(
+    key: 'menu_refresh_count_v1',
+    variants: ['three', 'five'],
+    hypothesis:
+        'Three monthly reward suggestions keep novelty without decision '
+        'fatigue; five adds noise and reduces adds-per-suggestion.',
+    successMetric: 'menu_refresh_added per menu_refresh_suggested',
+    guardrailMetrics: ['menu screen abandoned', 'suggestions ignored'],
+  );
+
   /// Reciprocity vs. scarcity framing on the upgrade CTA.
   static const paywallFraming = Experiment(
     key: 'paywall_framing_v1',

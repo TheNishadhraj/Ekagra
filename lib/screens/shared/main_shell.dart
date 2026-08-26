@@ -7,6 +7,7 @@ import '../../providers/task_provider.dart';
 import '../../services/analytics_service.dart';
 import '../../services/nudge_service.dart';
 import '../focus/focus_timer_screen.dart';
+import 'milestone_sheet.dart';
 import '../home/home_screen.dart';
 import '../settings/settings_screen.dart';
 import '../timeline/day_view_screen.dart';
@@ -32,6 +33,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // WI-5.3: the one-shot milestone celebration, after first frame so the
+    // sheet lands on a fully built shell (never blocks the app opening).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) MilestoneSheet.maybeShow(context);
+    });
   }
 
   @override

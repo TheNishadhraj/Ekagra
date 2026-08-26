@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../models/dopamine_menu_model.dart';
 import '../../providers/reward_provider.dart';
 import '../../services/analytics_service.dart';
+import '../../services/menu_refresh_service.dart';
 
 /// Step 2 of 3 — one tap by default.
 ///
@@ -140,6 +141,8 @@ class _DopamineMenuSetupScreenState extends State<DopamineMenuSetupScreen> {
                       _defaultPreview(),
                     ] else ...[
                       const SizedBox(height: EkagraSpacing.lg),
+                      _freshThisMonth(),
+                      const SizedBox(height: EkagraSpacing.lg),
                       _buildCategorySection(
                         'Quick Hits (2 min)',
                         RewardTier.quick,
@@ -236,6 +239,64 @@ class _DopamineMenuSetupScreenState extends State<DopamineMenuSetupScreen> {
             .toList(),
       ),
     ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
+  }
+
+  /// WI-5.3: "new toys, same box" — 3 monthly suggestions from the default
+  /// pool that are not already on the menu. One tap adds; ignoring is free.
+  Widget _freshThisMonth() {
+    final selectedTexts = {
+      ..._selected[RewardTier.quick]!,
+      ..._selected[RewardTier.medium]!,
+      ..._selected[RewardTier.big]!,
+    };
+    final now = DateTime.now();
+    final suggestions = MenuRefreshService.suggestionsFor(
+      selectedTexts,
+      now.year,
+      now.month,
+    );
+    if (suggestions.isEmpty) return const SizedBox.shrink();
+    track(Ev.menuRefreshSuggested, {
+      'count': suggestions.length,
+      'month': now.month,
+    });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Fresh this month ✨',
+          style: EkagraTypography.bodyBold,
+        ),
+        const SizedBox(height: EkagraSpacing.xs),
+        Text(
+          'New toys, same box. One tap adds them.',
+          style: EkagraTypography.caption,
+        ),
+        const SizedBox(height: EkagraSpacing.sm),
+        ...suggestions.map(
+          (item) => ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Text(item.emoji, style: const TextStyle(fontSize: 22)),
+            title: Text(
+              item.text,
+              style: EkagraTypography.body.copyWith(fontSize: 15),
+            ),
+            trailing: ActionChip(
+              label: const Text('Add'),
+              onPressed: () {
+                _toggle(item.tier, '${item.emoji} ${item.text}');
+                track(Ev.menuRefreshAdded, {
+                  'tier': item.tier.name,
+                  'month': now.month,
+                });
+              },
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildCategorySection(

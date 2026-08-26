@@ -68,6 +68,12 @@ class Ev {
   static const honestCheckCleared = 'honest_check_cleared';
 
   // ── Social ───────────────────────────────────────────────────────────────
+  /// WI-5.3 retention program.
+  static const activeDayMilestone = 'active_day_milestone';
+  static const menuRefreshSuggested = 'menu_refresh_suggested';
+  static const menuRefreshAdded = 'menu_refresh_added';
+  static const milestoneCelebrated = 'milestone_celebrated';
+
   static const bodyDoubleJoined = 'body_double_joined';
   static const bodyDoubleCheered = 'body_double_cheered';
 

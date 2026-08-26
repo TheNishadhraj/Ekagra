@@ -321,3 +321,42 @@ owner decision and the implementation sandbox had no pub.dev access anyway.
   pilot; without one, everything still lands in the local buffer.
 - Native-crash symbolication remains open (RISK-10 residue) until the
   Sentry/Crashlytics decision.
+
+---
+
+## ADR-010 — Retention program: active-day milestones (additive growth key)
+
+**Date:** 2026-08-26 · **Status:** accepted · **Work items:** WI-5.3
+**Reversible:** Yes (drop the key; nothing else reads it)
+
+### Context
+Anti-novelty-decay (WI-5.3) needs fire-once milestone celebrations at
+7/30/100 active days. "Days showing up" is a **total**, never a
+consecutive streak (Spec Rule 4) — a gap must never cost progress.
+
+### Decision
+`GrowthService`'s existing SharedPreferences JSON gains one additive
+key, `celebratedMilestones: List<int>` (default `[]` when absent —
+legacy payloads decode unchanged). `recordAppOpen` arms
+`pendingMilestone` at most once per milestone; `MainShell` shows
+`MilestoneSheet` post-frame once and clears it either way (celebrated
+or dismissed — the day is marked either way, so it can never nag).
+Celebrating rolls a **forced-rare** reward (`RewardEngine.rollRare`,
+added WI-3.1) and routes to the existing reveal screen.
+
+Also in WI-5.3 (no persistence impact): hyperfocus celebration copy on
+the focus-complete screen (≥120 min, celebration never scolding);
+`MenuRefreshService` (pure, deterministic monthly suggestions — the
+saved menu is the only state); weekly nudge-copy rotation shipped with
+WI-1.4; experiments `milestone_tone_v1` and `menu_refresh_count_v1`
+registered in `Experiments`. All gated by
+`FeatureFlags.retentionProgram = live` (local, real, honest).
+
+### Consequences
+- One more JSON key in a prefs blob the app already owns; SafeStore
+  per-record quarantine does not apply (plain prefs), legacy-decode is
+  test-enforced.
+- Failure mode: a milestone armed but the app killed before the sheet —
+  it simply shows on the next open (pending survives via in-memory +
+  celebrated-set persistence only after clearing; acceptable).
+- Registered as RISK-18.
