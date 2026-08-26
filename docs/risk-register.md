@@ -14,19 +14,25 @@ One malformed record during `load()` used to prevent the app from starting. Now 
 
 ---
 
-## RISK-02 — Timer drift on app resume
+## RISK-02 — Focus minutes lost on process kill (supersedes the original "timer drift" entry)
 
-**Severity:** P1
+**Severity:** P1 → **RESOLVED** (2026-08-26, WI-1.2 / ADR-005)
 **Owner:** Tech Lead
-**Mitigation:** Not yet implemented.
 
-`FocusProvider` relies on an active `Timer.periodic`. On mobile OS, backgrounding or screen lock suspends isolates. Upon resume, the timer display drifts unless wall-clock deltas (`DateTime.now()` vs `endsAt`) are enforced.
-
-**Recommended fix:** On app resume, recompute remaining time from `endsAt - DateTime.now()` rather than trusting accumulated tick counts.
+*2026-08-26 hygiene note:* the original entry claimed timer drift was
+unmitigated. That was stale: `FocusSession.remaining()` in
+`focus_session_model.dart` has always computed remaining time from the wall
+clock (`endsAt - now`), so display drift after backgrounding cannot occur by
+construction. The real gap (registered as K20 in the Gap Solutions research)
+was that the in-flight session and `_todayFocusMinutes` lived only in
+memory: an OS kill silently discarded the session, the day's minutes, and
+the reward. That is now RISK-09, fixed by session reconciliation on boot.
 
 ---
 
 ## RISK-03 — Billing for vapourware
+
+**Severity:** P0 → **RESOLVED**
 
 **Severity:** P0 → **RESOLVED**
 **Owner:** Chief Architect
@@ -85,3 +91,112 @@ The single biggest threat to the product working as designed: an audience whose 
 **Mitigation:** Not yet implemented.
 
 All instrumentation is local-only. No funnel data reaches a dashboard until a sink is wired. The `AnalyticsService.addSink()` seam exists and accepts any vendor SDK.
+
+---
+
+## RISK-09 — Focus session lost on process kill (K20)
+
+**Severity:** P1 → **RESOLVED** (2026-08-26, WI-1.2 / ADR-005)
+**Owner:** Tech Lead
+
+`FocusProvider` kept the in-flight `FocusSession` and the day's focus
+minutes in memory only. ADHD usage patterns (force-quits, OS memory
+pressure, battery death) made silent loss a routine event, not an edge
+case.
+
+**Mitigation (landed):** session + minutes persisted on every state
+transition; on boot `FocusProvider.reconcile()` either resumes the session
+against the wall clock or retro-completes it exactly once (idempotent
+reward). Covered by `test/resilience/focus_session_persistence_test.dart`.
+
+---
+
+## RISK-10 — No crash reporting (K-ref RISK-05 twin)
+
+**Severity:** P1 → **MITIGATED** (2026-08-26, WI-2.3)
+**Owner:** Tech Lead
+
+**Mitigation:** `CrashReporter` routes `FlutterError`, `PlatformDispatcher`
+errors and zoned exceptions into `AnalyticsService` (`Ev.errorOccurred`),
+which respects the in-app opt-out and feeds the remote sink when configured.
+Open residue: no vendor SDK with native crash capture (symbolication,
+out-of-heap crashes) until the owner picks a provider — see
+`docs/briefs/observability-vendor-brief.md`.
+
+---
+
+## RISK-11 — No analytics sink (was RISK-08)
+
+**Severity:** P2 → **MITIGATED** (2026-08-26, WI-2.3)
+**Owner:** Growth Lead
+
+**Mitigation:** `RemoteAnalyticsSink` (dependency-free HTTP, PostHog
+capture-compatible) attaches to the existing `AnalyticsService.addSink()`
+seam; inert until an endpoint+key are configured in
+`lib/config/observability_config.dart`; PII-scrubbed and opt-out-honouring
+by test. Residue: owner must create the (free) project and fill the key.
+
+---
+
+## RISK-12 — Focus Caves moderation & abuse surface (pre-registered)
+
+**Severity:** P2 (P1 the day rooms go live)
+**Owner:** Product Owner
+
+Registered with the Phase-4 cut (ADR-006). If/when real body-doubling
+rooms are built, the moderation spec must land **before** code: ToS,
+in-room report flow to a human review queue, avatar mode, join rate
+limits, and no DMs in V1. Until then this risk is dormant by construction
+— there is no social surface at all.
+
+---
+
+## RISK-13 — Focus Caves presence/infra cost (pre-registered)
+
+**Severity:** P3 (dormant)
+**Owner:** Product Owner
+
+LiveKit self-host (~$60–200/mo at ~200 concurrent) or Cloud (~$50/mo)
+plus moderation labour. Dormant after the Phase-4 cut; re-open with
+ADR-006's rebuild checklist before any build commit.
+
+---
+
+## RISK-14 — iOS Screen Time API approval for Gentle Block
+
+**Severity:** P2
+**Owner:** Product Owner
+
+iOS self-blocking (FamilyControls/ManagedSettings/DeviceActivity) requires
+Apple's Screen Time API approval with no guaranteed timeline. V1 ships the
+honest subset (custom Focus mode + a "Guide me to Screen Time" deep-link
+flow, honestly labelled). If approval never lands, iOS stays on that
+subset and the Android Accessibility-Service path carries the feature.
+Build spec: `docs/briefs/gentle-block-build-spec.md`.
+
+---
+
+## RISK-15 — Gap-solutions code statically verified, not suite-executed
+
+**Severity:** P1 (temporary)
+**Owner:** Tech Lead
+
+The 2026-08-26 implementation environment had no Dart toolchain and no
+pub.dev egress, so every WI landing that day was verified statically
+(`tools/static_verify.py` + review), not with `flutter analyze/test`.
+First CI run (blocked on the one manual workflow move — `ci/README.md`)
+must be treated as the real gate; fix forward, never weaken the gates.
+
+---
+
+## RISK-16 — Local notifications degrade without exact alarms / boot
+
+**Severity:** P3
+**Owner:** Tech Lead
+
+The nudge engine (WI-1.4) schedules inexact alarms by design (gentle, no
+precision promise) and does not reschedule after device reboot in V0.
+Impact: nudges may drift minutes late and disappear after a reboot until
+the next app open. Documented rather than fixed — exact alarms need
+`SCHEDULE_EXACT_ALARM` user grants (a permission wall), and a boot
+receiver adds manifest surface; revisit with on-device evidence.
