@@ -3,9 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../../config/theme.dart';
 import '../../providers/energy_provider.dart';
+import '../../providers/focus_provider.dart';
 import '../../providers/mood_provider.dart';
 import '../../providers/task_provider.dart';
+import '../../utils/countdown_palette.dart';
+import '../../widgets/focus_ring.dart';
 import '../../widgets/free_time_gap.dart';
+import 'estimate_sheet.dart';
 
 class DayViewScreen extends StatefulWidget {
   const DayViewScreen({super.key});
@@ -23,6 +27,7 @@ class _DayViewScreenState extends State<DayViewScreen> {
     final taskProvider = context.watch<TaskProvider>();
     final energyProvider = context.watch<EnergyProvider>();
     final moodProvider = context.watch<MoodProvider>();
+    final focusProvider = context.watch<FocusProvider>();
 
     final tasks = taskProvider.activeIncomplete;
     final completed = taskProvider.completedToday;
@@ -294,6 +299,44 @@ class _DayViewScreenState extends State<DayViewScreen> {
                                     ],
                                   ),
                                 ),
+                                // WI-2.2: one active task at a time. The
+                                // bolt opens the estimate sheet (1 tap) and
+                                // Start confirms (2nd tap). While running,
+                                // the chip itself shows a shrinking arc in
+                                // countdown-palette colours — wall clock,
+                                // zero drift by construction.
+                                if (focusProvider.currentTask?.id == task.id)
+                                  FocusRing(
+                                    progress: focusProvider.isIdle
+                                        ? 0
+                                        : focusProvider.progress,
+                                    remaining: focusProvider.remaining,
+                                    size: 34,
+                                    showTime: false,
+                                    color: focusProvider.isIdle
+                                        ? EkagraColors.primaryLight
+                                        : CountdownPalette
+                                              .colorForRemainingFraction(
+                                              focusProvider
+                                                  .remaining
+                                                  .inSeconds /
+                                              ((focusProvider
+                                                          .session
+                                                          ?.plannedMinutes ??
+                                                      25) *
+                                                  60),
+                                            ),
+                                  )
+                                else
+                                  IconButton(
+                                    tooltip: 'Make active',
+                                    icon: const Icon(
+                                      Icons.bolt_rounded,
+                                      color: EkagraColors.primary,
+                                    ),
+                                    onPressed: () =>
+                                        EstimateSheet.show(context, task),
+                                  ),
                               ],
                             ),
                           ),
