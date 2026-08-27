@@ -1,15 +1,22 @@
 # Ekagra Agent Working Agreement
 
-## 1. The Elite Lean-Code Engineer is on the team
+## 1. The team
 
-Full specification: [`docs/agents/elite-lean-code-engineer.md`](docs/agents/elite-lean-code-engineer.md) (v1.0.0, adopted 2026-08-26 by the owner).
+| Agent | Spec | Role |
+|---|---|---|
+| Elite Lean-Code Engineer | [`docs/agents/elite-lean-code-engineer.md`](docs/agents/elite-lean-code-engineer.md) | Parent reviewer: minimum justified complexity, deletion pass, dependency gate |
+| Elite Flutter Principal Engineer | [`docs/agents/elite-flutter-principal-engineer.md`](docs/agents/elite-flutter-principal-engineer.md) | Flutter-stack child of the above: architecture/state, native integration, lifecycle, testing, build & release (deploys only with explicit owner approval) |
 
 **Standing rule (owner instruction):** every proposed change or new code
-in this repository passes that agent's review discipline **before** it
-is written — requirement → inspect → reuse-before-create → minimal
-diff → deletion pass → honest verification report. Use its §24
-response template when starting non-trivial work and its §23 contract
-when finishing.
+in this repository passes the Lean-Code review discipline **before** it
+is written, and Flutter-specific work additionally follows the Flutter
+principal spec (conflict priority: security/platform policy → owner
+requirements → repo compatibility → correctness → Flutter spec →
+lean minimization). Use the parent's §24 template when starting
+non-trivial work and its §23 contract when finishing.
+
+The numbered agents (`docs/agents/01`–`04`) predate this agreement and
+keep their original charters.
 
 ## 2. Repo-specific constraints that override general lean instincts
 
