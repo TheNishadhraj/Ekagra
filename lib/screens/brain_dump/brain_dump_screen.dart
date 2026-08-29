@@ -7,6 +7,7 @@ import '../../config/theme.dart';
 import '../../providers/task_provider.dart';
 import '../../services/analytics_service.dart';
 import '../../services/monetization_service.dart';
+import '../../services/voice_dump_parser.dart';
 import '../../widgets/pro_gate.dart';
 
 class BrainDumpScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final List<String> _dumpedItems = [];
-  bool _isListeningVoice = false;
+  final VoiceDumpParser _parser = VoiceDumpParser();
 
   final List<String> _categoryChips = const [
     '📧 Email',
@@ -92,21 +93,29 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
     });
   }
 
-  void _toggleVoice() {
+  /// WI-2.1 core, shipped without the microphone: split a whole pasted or
+  /// typed brain-dump into confirmable task cards, with dates understood.
+  /// The on-device voice binding itself is `FeatureFlags.voiceDump`
+  /// (unbuilt, honestly) — see docs/briefs/voice-yap-mode-brief.md.
+  void _smartSplit() {
+    final text = _controller.text;
+    if (text.trim().isEmpty) return;
+    final fragments = _parser.parse(text);
+    if (fragments.isEmpty) return;
+
     setState(() {
-      _isListeningVoice = !_isListeningVoice;
+      for (final f in fragments) {
+        _dumpedItems.add(f.matchedTemplate ?? f.title);
+      }
+      _controller.clear();
     });
-    if (_isListeningVoice) {
-      // Simulate voice input adding a item after 2s
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted && _isListeningVoice) {
-          _addItem('Call dentist for appointment');
-          setState(() {
-            _isListeningVoice = false;
-          });
-        }
-      });
-    }
+    _focusNode.requestFocus();
+
+    track(Ev.brainDumpCompleted, {
+      'source': 'smart_split',
+      'task_count': fragments.length,
+      'with_dates': fragments.where((f) => f.deadline != null).length,
+    });
   }
 
   /// Persist the dump and tell the user the truth about what was saved.
@@ -175,15 +184,8 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
                       focusNode: _focusNode,
                       textInputAction: TextInputAction.done,
                       onSubmitted: _addItem,
-                      decoration: InputDecoration(
-                        hintText: 'Type or speak anything...',
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _isListeningVoice ? Icons.mic_rounded : Icons.mic_none_rounded,
-                            color: _isListeningVoice ? EkagraColors.error : EkagraColors.primary,
-                          ),
-                          onPressed: _toggleVoice,
-                        ),
+                      decoration: const InputDecoration(
+                        hintText: 'Dump anything here — one line or one blob',
                       ),
                     ),
                   ),
@@ -198,32 +200,22 @@ class _BrainDumpScreenState extends State<BrainDumpScreen> {
               ),
             ),
 
-            if (_isListeningVoice)
-              Padding(
-                padding: const EdgeInsets.all(EkagraSpacing.md),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: EkagraColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(EkagraRadius.full),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                EkagraSpacing.lg, EkagraSpacing.sm, EkagraSpacing.lg, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ActionChip(
+                  avatar: const Icon(Icons.auto_awesome, size: 16),
+                  label: const Text('Smart split ✨'),
+                  backgroundColor: EkagraColors.surface,
+                  side: BorderSide(
+                    color: EkagraColors.primaryLight.withValues(alpha: 0.3),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.circle, color: EkagraColors.error, size: 10),
-                      SizedBox(width: 8),
-                      Text(
-                        'Listening... speak clearly',
-                        style: TextStyle(
-                          color: EkagraColors.error,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+                  onPressed: _smartSplit,
                 ),
               ),
+            ),
 
             const SizedBox(height: EkagraSpacing.md),
 

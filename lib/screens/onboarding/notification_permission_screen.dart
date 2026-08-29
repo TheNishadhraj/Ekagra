@@ -5,18 +5,51 @@ import 'package:provider/provider.dart';
 import '../../config/routes.dart';
 import '../../config/theme.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/nudge_service.dart';
 
+/// Step 3 of 3 — and since WI-1.4, an honest one.
+///
+/// This screen used to promise "gentle nudges" while the app had no
+/// notification capability at all (K19). The engine is real now, so the
+/// button actually requests the OS permission and arms the daily brief.
+/// The "later" path is a real skip: notifications stay fully off.
 class NotificationPermissionScreen extends StatelessWidget {
   const NotificationPermissionScreen({super.key});
 
+  Future<void> _finish(
+    BuildContext context,
+    SettingsProvider settings,
+    bool requested,
+  ) async {
+    var granted = false;
+    if (requested) {
+      granted = await NudgeService.instance.requestPermission();
+    }
+    if (granted) {
+      await settings.enableNotifications();
+      await NudgeService.instance.enabledSet(true);
+      await NudgeService.instance.scheduleDailyBrief(
+        hour: settings.user.notifications.morning.hour,
+      );
+    }
+    await settings.completeOnboarding();
+    track(Ev.onboardingCompleted, {
+      'notifications_granted': granted,
+      'notifications_requested': requested,
+    });
+    if (context.mounted) {
+      Navigator.pushReplacementNamed(context, AppRoutes.main);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final settings = context.read<SettingsProvider>();
+
     return Scaffold(
       backgroundColor: EkagraColors.background,
-      appBar: AppBar(
-        title: const Text('4 of 4'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Step 3 of 3'), centerTitle: true),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(EkagraSpacing.xl),
@@ -33,7 +66,9 @@ class NotificationPermissionScreen extends StatelessWidget {
                 child: const Center(
                   child: Text('🔔', style: TextStyle(fontSize: 40)),
                 ),
-              ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8)),
+              ).animate().fadeIn(duration: 400.ms).scale(
+                    begin: const Offset(0.8, 0.8),
+                  ),
 
               const SizedBox(height: EkagraSpacing.xl),
 
@@ -46,7 +81,7 @@ class NotificationPermissionScreen extends StatelessWidget {
               const SizedBox(height: EkagraSpacing.sm),
 
               Text(
-                'Soft reminders like a friend tapping your shoulder.',
+                'A few soft reminders a day — and they give up after three tries.',
                 style: EkagraTypography.body.copyWith(
                   color: EkagraColors.textSecondary,
                 ),
@@ -55,14 +90,21 @@ class NotificationPermissionScreen extends StatelessWidget {
 
               const SizedBox(height: EkagraSpacing.xxl),
 
-              // Sample notification cards
+              // These are previews of notifications that genuinely exist
+              // since WI-1.4 — no dead promises on this screen.
               _sampleCard(
-                '💛 "Hey, you\'ve got 15 min. Want to tackle that email?"',
-              ).animate().fadeIn(delay: 400.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                '💛 "Your one thing is still here when you are."',
+              ).animate().fadeIn(
+                    delay: 400.ms,
+                    duration: 400.ms,
+                  ).slideY(begin: 0.2, end: 0),
               const SizedBox(height: EkagraSpacing.md),
               _sampleCard(
-                '💛 "You haven\'t checked in today. No pressure — just saying hi."',
-              ).animate().fadeIn(delay: 500.ms, duration: 400.ms).slideY(begin: 0.2, end: 0),
+                '🌱 "15 min left — still with it? Tap to continue."',
+              ).animate().fadeIn(
+                    delay: 500.ms,
+                    duration: 400.ms,
+                  ).slideY(begin: 0.2, end: 0),
 
               const Spacer(),
 
@@ -70,12 +112,7 @@ class NotificationPermissionScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () async {
-                    await context.read<SettingsProvider>().enableNotifications();
-                    if (context.mounted) {
-                      Navigator.pushNamed(context, AppRoutes.paywall);
-                    }
-                  },
+                  onPressed: () => _finish(context, settings, true),
                   child: const Text('Enable gentle nudges 🔔'),
                 ),
               ),
@@ -83,11 +120,9 @@ class NotificationPermissionScreen extends StatelessWidget {
               const SizedBox(height: EkagraSpacing.md),
 
               TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.paywall);
-                },
+                onPressed: () => _finish(context, settings, false),
                 child: Text(
-                  'I\'ll do this later',
+                  'Not today',
                   style: EkagraTypography.caption.copyWith(
                     color: EkagraColors.textTertiary,
                   ),
@@ -98,12 +133,7 @@ class NotificationPermissionScreen extends StatelessWidget {
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _dot(true),
-                  _dot(true),
-                  _dot(true),
-                  _dot(true),
-                ],
+                children: [_dot(true), _dot(true), _dot(true)],
               ),
             ],
           ),
@@ -132,10 +162,7 @@ class NotificationPermissionScreen extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: EkagraTypography.body.copyWith(
-          fontSize: 14,
-          height: 1.4,
-        ),
+        style: EkagraTypography.body.copyWith(fontSize: 14, height: 1.4),
       ),
     );
   }
@@ -147,7 +174,9 @@ class NotificationPermissionScreen extends StatelessWidget {
       height: active ? 10 : 8,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: active ? EkagraColors.primary : EkagraColors.primaryLight.withValues(alpha: 0.4),
+        color: active
+            ? EkagraColors.primary
+            : EkagraColors.primaryLight.withValues(alpha: 0.4),
       ),
     );
   }

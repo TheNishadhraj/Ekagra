@@ -40,6 +40,12 @@ class Ev {
   static const focusSessionPaused = 'focus_session_paused';
   static const focusSessionCompleted = 'focus_session_completed';
   static const focusSessionAbandoned = 'focus_session_abandoned';
+
+  /// Added 2026-08-26 (WI-1.2/ADR-005): a session that ended while the
+  /// process was dead and was retro-completed at boot. Kept separate from
+  /// [focusSessionCompleted] so dashboards can distinguish live completions
+  /// from reconciled ones without redefining either.
+  static const focusSessionReconciled = 'focus_session_reconciled';
   static const cantFocusTapped = 'cant_focus_tapped';
   static const cantFocusAction = 'cant_focus_action';
   static const hyperfocusDetected = 'hyperfocus_detected';
@@ -62,6 +68,12 @@ class Ev {
   static const honestCheckCleared = 'honest_check_cleared';
 
   // ── Social ───────────────────────────────────────────────────────────────
+  /// WI-5.3 retention program.
+  static const activeDayMilestone = 'active_day_milestone';
+  static const menuRefreshSuggested = 'menu_refresh_suggested';
+  static const menuRefreshAdded = 'menu_refresh_added';
+  static const milestoneCelebrated = 'milestone_celebrated';
+
   static const bodyDoubleJoined = 'body_double_joined';
   static const bodyDoubleCheered = 'body_double_cheered';
 

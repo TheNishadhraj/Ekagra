@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../config/routes.dart';
 import '../../config/theme.dart';
+import '../../providers/task_provider.dart';
+import '../../services/analytics_service.dart';
+import '../../services/nudge_service.dart';
 import '../focus/focus_timer_screen.dart';
+import 'milestone_sheet.dart';
 import '../home/home_screen.dart';
 import '../settings/settings_screen.dart';
 import '../timeline/day_view_screen.dart';
@@ -14,7 +19,7 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   final _pages = const [
@@ -23,6 +28,49 @@ class _MainShellState extends State<MainShell> {
     FocusTimerScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // WI-5.3: the one-shot milestone celebration, after first frame so the
+    // sheet lands on a fully built shell (never blocks the app opening).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) MilestoneSheet.maybeShow(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// WI-1.4: the sidekick pattern. Leaving the app *with* a picked One
+  /// Thing arms the gentle sequence (max 3, then silence) and one
+  /// welcome-back nudge three days out. Coming back cancels both —
+  /// "nothing was lost" only ever needs to be said when it is true.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    final nudges = NudgeService.instance;
+    if (!nudges.enabled) return;
+
+    if (state == AppLifecycleState.paused) {
+      track(Ev.appBackgrounded, {});
+      final oneThing = context.read<TaskProvider>().oneThing;
+      if (oneThing != null) {
+        nudges.beginTaskNudges(
+          taskId: oneThing.id,
+          taskTitle: oneThing.title,
+        );
+      }
+      nudges.scheduleWelcomeBack();
+    } else if (state == AppLifecycleState.resumed) {
+      nudges.cancelAllTaskNudges();
+      nudges.cancelWelcomeBack();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

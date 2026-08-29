@@ -39,25 +39,74 @@ enum FeatureMaturity {
 class FeatureFlags {
   FeatureFlags._();
 
-  /// Body doubling: `_roomCount = 127` is a literal. There is no room, no
-  /// presence service, no other participants. Cheers are appended to a local list and
-  /// delivered to nobody.
-  static const bodyDoubling = FeatureMaturity.simulated;
+  /// Body doubling ("Focus Caves"): NOT BUILT — cut by ADR-006 with the
+  /// Phase-4 decision gate. There is no room, no backend, no presence
+  /// data, and the simulated screen was removed rather than left to
+  /// imply otherwise. Rebuild checklist (moderation spec first, LiveKit
+  /// self-host vs Cloud decision, avatar-first presence, room caps, no
+  /// DMs in V1) lives in ADR-006 + RISK-12/13. Stays `unbuilt` — and
+  /// therefore non-billable — until a real room works end-to-end.
+  static const bodyDoubling = FeatureMaturity.unbuilt;
 
   /// "AI" task selection is a deterministic local scoring function in
   /// `AiService._score`. It is genuinely useful and it is genuinely not AI.
   /// The spec calls for GPT-4o-mini; there is no HTTP client in pubspec.
   static const aiTaskSelection = FeatureMaturity.simulated;
 
-  /// Same engine, same caveat — `breakdownTask` returns canned templates
-  /// matched on keywords.
-  static const aiTaskBreakdown = FeatureMaturity.simulated;
+  /// LIVE since WI-3.1: the Pro-gated "Task breakdown" is now the real
+  /// local decomposer (see taskDecomposition). The flag keeps its
+  /// historical name so the paywall matrix is unchanged; the honest
+  /// label ("smart, on-device") stays.
+  static const aiTaskBreakdown = FeatureMaturity.live;
 
   /// Not implemented on either platform.
   static const widgets = FeatureMaturity.unbuilt;
 
-  /// Local-only: no cloud sync, no cross-device continuity.
-  static const dataExport = FeatureMaturity.simulated;
+  /// WI-5.1 Gentle Block: NOT BUILT. The Dart decision core
+  /// (gentle_block_gate.dart) and the calm pause screen exist and are
+  /// tested, but the Android accessibility detection layer is not
+  /// wired and no route is registered — a pause screen that never
+  /// pauses would be the K18 pattern. Build spec:
+  /// docs/briefs/gentle-block-build-spec.md. iOS V1 = Focus mode +
+  /// guide flow only (RISK-14 for the Screen Time API track).
+  static const gentleBlock = FeatureMaturity.unbuilt;
+
+  /// LIVE since the K18 fix (2026-08-26): "Export My Data" serializes
+  /// tasks, rewards, energy/mood logs and profile to a real JSON file in
+  /// the app documents directory (plus a tasks CSV) and hands it to the OS
+  /// share sheet. Still local-only: no cloud sync, no cross-device
+  /// continuity — and none claimed. Round-trip coverage lives in
+  /// test/export_test.dart.
+  static const dataExport = FeatureMaturity.live;
+
+  /// LIVE since WI-3.1 (2026-08-26): local task decomposition + one-step
+  /// execution mode. 32 template families x 3 spiciness levels as data
+  /// (assets/templates/task_breakdown_templates.json), generic 2-minute-
+  /// rule fallback, quick-tier micro-ticks per step. No network, no
+  /// model, honestly labelled ("built from patterns, runs on your phone").
+  static const taskDecomposition = FeatureMaturity.live;
+
+  /// WI-5.3 anti-novelty-decay program: active-days milestones (7/30/100),
+  /// hyperfocus celebrations, monthly dopamine-menu refresh suggestions,
+  /// weekly nudge-copy rotation (shipped with WI-1.4). All local, all real
+  /// — `live`. Every celebration string is Rule-15 tested.
+  static const retentionProgram = FeatureMaturity.live;
+
+  /// Voice "yap mode": NOT BUILT, and no UI implies otherwise. The old
+  /// Brain Dump mic button used to *simulate* listening for 2 seconds and
+  /// insert a hardcoded item — removed 2026-08-26 as a K18-class honesty
+  /// bug. What IS real today: the on-device transcript parser
+  /// (`VoiceDumpParser`, "Smart split") which turns any typed or pasted
+  /// dump into dated task cards. The whisper.cpp binding (first-run model
+  /// download) is deferred — docs/briefs/voice-yap-mode-brief.md.
+  static const voiceDump = FeatureMaturity.unbuilt;
+
+  /// LIVE since WI-1.4 (2026-08-26): real local notifications via
+  /// flutter_local_notifications — per-task gentle nudge sequence (max 3,
+  /// then stops silently), one optional daily brief, one welcome-back
+  /// nudge after a 3-day gap, and a 15-min-left focus transition alert.
+  /// Local scheduling only; no push service, no backend, opt-out stops all.
+  static const nudges = FeatureMaturity.live;
 
   /// These are real, local-first, and work exactly as advertised.
   static const unlimitedTasks = FeatureMaturity.live;

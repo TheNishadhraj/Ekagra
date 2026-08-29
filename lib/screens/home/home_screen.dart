@@ -141,6 +141,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: EkagraTypography.encouragement,
               ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
 
+              // ADR-005: a session that completed while the app was dead is
+              // acknowledged once, gently — minutes were kept, nothing was lost.
+              if (focusProvider.pendingReconcileMinutes != null) ...[
+                const SizedBox(height: EkagraSpacing.md),
+                _ReconcileBanner(
+                  minutes: focusProvider.pendingReconcileMinutes!,
+                  onTap: () => focusProvider.consumeReconcileNotice(),
+                ),
+              ],
+
               const SizedBox(height: EkagraSpacing.lg),
 
               // Day Progress Bar
@@ -569,6 +579,46 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One-tap acknowledgement that a focus session finished while the app was
+/// closed (ADR-005). Celebration of what DID happen — never a scold about
+/// the app having died.
+class _ReconcileBanner extends StatelessWidget {
+  const _ReconcileBanner({required this.minutes, required this.onTap});
+
+  final int minutes;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(EkagraRadius.lg),
+      child: Container(
+        padding: const EdgeInsets.all(EkagraSpacing.md),
+        decoration: BoxDecoration(
+          color: EkagraColors.success.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(EkagraRadius.lg),
+          border: Border.all(
+            color: EkagraColors.success.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Text('💛', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: EkagraSpacing.sm),
+            Expanded(
+              child: Text(
+                'Focus finished while you were away — $minutes minutes kept, nothing lost. Tap to clear.',
+                style: EkagraTypography.caption,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

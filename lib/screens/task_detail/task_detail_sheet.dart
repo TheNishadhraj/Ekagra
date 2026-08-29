@@ -6,7 +6,8 @@ import '../../config/theme.dart';
 import '../../models/task_model.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/task_provider.dart';
-import '../../services/ai_service.dart';
+import '../../services/analytics_service.dart';
+import '../../services/task_decomposer.dart';
 
 class TaskDetailSheet extends StatefulWidget {
   final TaskModel task;
@@ -30,7 +31,132 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
   late TaskModel _task;
   late TextEditingController _notesController;
   late TextEditingController _subtaskController;
-  bool _isBreakingDown = false;
+  TaskDecomposer? _decomposer;
+  bool _showAllSteps = false;
+
+  Future<TaskDecomposer> _decomposerReady() async =>
+      _decomposer ??= await TaskDecomposer.loadDefault();
+
+  List<DecomposedStep> _planFor(TaskModel task) {
+    return List.generate(task.subtasks.length, (i) {
+      final state = i < task.stepStates.length ? task.stepStates[i] : null;
+      return DecomposedStep(
+        title: task.subtasks[i],
+        done: state == 'done',
+        skipped: state == 'skipped',
+      );
+    });
+  }
+
+  /// WI-3.1: spiciness picker, then deterministic local breakdown.
+  /// Honest label everywhere: this is pattern matching on your phone.
+  Future<void> _breakDown() async {
+    final spiciness = await _pickSpiciness();
+    if (spiciness == null || !mounted) return;
+
+    final decomposer = await _decomposerReady();
+    final steps = decomposer.breakdown(_task.title, spiciness);
+    final updated = _task.copyWith(
+      subtasks: steps.map((s) => s.title).toList(),
+      stepStates: const [],
+      spiciness: spiciness.name,
+    );
+    await context.read<TaskProvider>().updateTask(updated);
+    if (!mounted) return;
+    setState(() => _task = updated);
+
+    track(Ev.taskBreakdownRequested, {
+      'spiciness': spiciness.name,
+      'step_count': steps.length,
+      'family': decomposer.familyIdFor(_task.title) ?? 'generic',
+      'engine': 'local_templates',
+    });
+  }
+
+  Future<Spiciness?> _pickSpiciness() {
+    return showModalBottomSheet<Spiciness>(
+      context: context,
+      backgroundColor: EkagraColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(EkagraRadius.xl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(EkagraSpacing.lg),
+              child: Text('How tiny should the steps be?', style: EkagraTypography.h3),
+            ),
+            ...Spiciness.values.map(
+              (s) => ListTile(
+                leading: Text(
+                  s == Spiciness.mild ? '🪵' : (s == Spiciness.medium ? '🌰' : '🌶️'),
+                  style: const TextStyle(fontSize: 22),
+                ),
+                title: Text(s.label),
+                subtitle: Text(
+                  '${s.bounds.$1}–${s.bounds.$2} steps',
+                  style: EkagraTypography.tiny,
+                ),
+                onTap: () => Navigator.pop(ctx, s),
+              ),
+            ),
+            const SizedBox(height: EkagraSpacing.md),
+            Padding(
+              padding: const EdgeInsets.only(bottom: EkagraSpacing.md),
+              child: Text(
+                'Runs on your phone — no cloud, no account.',
+                style: EkagraTypography.tiny,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _resolveStep(int index, {required bool skipped}) async {
+    final states = [..._task.stepStates];
+    while (states.length < _task.subtasks.length) {
+      states.add('pending');
+    }
+    states[index] = skipped ? 'skipped' : 'done';
+    var updated = _task.copyWith(stepStates: states);
+    await context.read<TaskProvider>().updateTask(updated);
+    if (!mounted) return;
+    setState(() => _task = updated);
+
+    if (!skipped) {
+      // Micro-tick: a quick-tier treat, inline (the real variable-ratio
+      // spin stays reserved for finishing the whole task).
+      await context.read<RewardProvider>().recordStepCompleted(
+            updated.id,
+            taskTitle: updated.title,
+          );
+      if (!mounted) return;
+      final finished = DecompositionPlan(steps: _planFor(updated)).isFinished;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            finished ? 'All steps done — finish the task below 💛' : '🍫 Tiny win logged.',
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: EkagraColors.primary,
+        ),
+      );
+    }
+  }
+
+  Future<void> _finishWholeTask() async {
+    final taskProvider = context.read<TaskProvider>();
+    final rewards = context.read<RewardProvider>();
+    if (_task.isCompleted) return; // exactly one completion reward, ever
+    await taskProvider.completeTask(_task.id);
+    rewards.recordTaskCompletion(_task.id);
+    if (context.mounted) Navigator.pop(context);
+  }
 
   @override
   void initState() {
@@ -75,36 +201,10 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
     });
   }
 
-  Future<void> _breakDownWithAi() async {
-    setState(() {
-      _isBreakingDown = true;
-    });
-    final ai = AiService();
-    final messenger = ScaffoldMessenger.of(context);
-    final subtasks = await ai.breakdownTask(_task.title);
-    if (!mounted) return;
-
-    final updatedList = [..._task.subtasks, ...subtasks];
-    final updated = _task.copyWith(subtasks: updatedList);
-    await context.read<TaskProvider>().updateTask(updated);
-    if (!mounted) return;
-
-    setState(() {
-      _task = updated;
-      _isBreakingDown = false;
-    });
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('🔨 Split into small micro-steps!'),
-        backgroundColor: EkagraColors.primary,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final taskProvider = context.read<TaskProvider>();
-    final rewardProvider = context.read<RewardProvider>();
 
     return Container(
       decoration: const BoxDecoration(
@@ -226,41 +326,79 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
               const SizedBox(height: EkagraSpacing.lg),
             ],
 
-            // Subtasks
+            // WI-3.1 — breakdown + one-step execution mode.
+            //
+            // The differentiator nobody in the category has fused with
+            // rewards: ONE step at a time, a quick-tier treat per step,
+            // and the real variable-ratio spin only when the task itself
+            // is finished. Primary choices on this view: Done / Skip /
+            // See all — Rule 1's budget of three.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Subtasks (${_task.subtasks.length})',
+                  'Steps',
                   style: EkagraTypography.bodyBold.copyWith(fontSize: 14),
                 ),
                 TextButton.icon(
-                  onPressed: _isBreakingDown ? null : _breakDownWithAi,
-                  icon: _isBreakingDown
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.auto_awesome, size: 16),
-                  label: Text(_isBreakingDown ? 'Thinking...' : 'Break this down 🔨'),
+                  onPressed: _breakDown,
+                  icon: const Icon(Icons.auto_awesome, size: 16),
+                  label: const Text('Break it down 🌶️'),
                 ),
               ],
             ),
 
-            ...List.generate(_task.subtasks.length, (index) {
-              final sub = _task.subtasks[index];
-              return ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.check_box_outline_blank_rounded, size: 20),
-                title: Text(sub, style: EkagraTypography.body.copyWith(fontSize: 14)),
-                trailing: IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  onPressed: () => _removeSubtask(index),
-                ),
-              );
-            }),
+            if (_task.subtasks.isEmpty)
+              Text(
+                'Stuck staring at it? Break it into tiny steps — built from patterns, runs on your phone.',
+                style: EkagraTypography.caption,
+              )
+            else ...[
+              _ExecutionStepCard(
+                steps: _planFor(_task),
+                showAll: _showAllSteps,
+                onDone: (i) => _resolveStep(i, skipped: false),
+                onSkip: (i) => _resolveStep(i, skipped: true),
+                onToggleShowAll: () =>
+                    setState(() => _showAllSteps = !_showAllSteps),
+                onFinish: _finishWholeTask,
+              ),
+              if (_showAllSteps)
+                ...List.generate(_task.subtasks.length, (index) {
+                  final sub = _task.subtasks[index];
+                  final state = index < _task.stepStates.length
+                      ? _task.stepStates[index]
+                      : null;
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      state == 'done'
+                          ? Icons.check_circle_rounded
+                          : (state == 'skipped'
+                              ? Icons.skip_next_rounded
+                              : Icons.radio_button_unchecked_rounded),
+                      size: 20,
+                      color: state == 'done'
+                          ? EkagraColors.success
+                          : EkagraColors.textTertiary,
+                    ),
+                    title: Text(
+                      sub,
+                      style: EkagraTypography.body.copyWith(
+                        fontSize: 14,
+                        decoration: state == 'done'
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                      ),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      onPressed: () => _removeSubtask(index),
+                    ),
+                  );
+                }),
+            ],
 
             Row(
               children: [
@@ -319,11 +457,7 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () async {
-                      await taskProvider.completeTask(_task.id);
-                      rewardProvider.recordTaskCompletion(_task.id);
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                    onPressed: _finishWholeTask,
                     icon: const Icon(Icons.check_rounded, color: EkagraColors.success),
                     label: const Text('Mark Done ✅'),
                   ),
@@ -362,6 +496,124 @@ class _TaskDetailSheetState extends State<TaskDetailSheet> {
         style: EkagraTypography.tiny.copyWith(
           color: EkagraColors.textSecondary,
         ),
+      ),
+    );
+  }
+}
+
+/// One step at a time. The full list is one deliberate toggle away, never
+/// the default view — overwhelm is the failure mode this exists to kill.
+class _ExecutionStepCard extends StatelessWidget {
+  const _ExecutionStepCard({
+    required this.steps,
+    required this.showAll,
+    required this.onDone,
+    required this.onSkip,
+    required this.onToggleShowAll,
+    required this.onFinish,
+  });
+
+  final List<DecomposedStep> steps;
+  final bool showAll;
+  final void Function(int index) onDone;
+  final void Function(int index) onSkip;
+  final VoidCallback onToggleShowAll;
+  final Future<void> Function() onFinish;
+
+  @override
+  Widget build(BuildContext context) {
+    final plan = DecompositionPlan(steps: steps);
+    final current = plan.currentStep;
+
+    if (current == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(EkagraSpacing.lg),
+        decoration: BoxDecoration(
+          color: EkagraColors.success.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(EkagraRadius.lg),
+          border: Border.all(color: EkagraColors.success.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          children: [
+            const Text('🎉', style: TextStyle(fontSize: 28)),
+            const SizedBox(height: EkagraSpacing.xs),
+            Text('Every step done!', style: EkagraTypography.bodyBold),
+            const SizedBox(height: EkagraSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: onFinish,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: EkagraColors.success,
+                ),
+                icon: const Icon(Icons.check_rounded, color: Colors.white),
+                label: const Text('Finish the task ✅'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final index = plan.currentIndex;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(EkagraSpacing.lg),
+      decoration: BoxDecoration(
+        color: EkagraColors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(EkagraRadius.lg),
+        border: Border.all(
+          color: EkagraColors.primaryLight.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ONE STEP AT A TIME', style: EkagraTypography.tiny),
+          const SizedBox(height: EkagraSpacing.xs),
+          Text(
+            current.title,
+            style: EkagraTypography.h3,
+          ),
+          const SizedBox(height: EkagraSpacing.xs),
+          Text(
+            '≈ 2–5 min · ${plan.resolvedCount} of ${steps.length} done',
+            style: EkagraTypography.tiny,
+          ),
+          const SizedBox(height: EkagraSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => onDone(index),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: EkagraColors.success,
+              ),
+              icon: const Icon(Icons.check_rounded, color: Colors.white),
+              label: const Text('Done with this step'),
+            ),
+          ),
+          const SizedBox(height: EkagraSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => onSkip(index),
+                  child: const Text('Skip step'),
+                ),
+              ),
+              const SizedBox(width: EkagraSpacing.sm),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onToggleShowAll,
+                  child: Text(showAll ? 'Hide all steps' : 'See all steps'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

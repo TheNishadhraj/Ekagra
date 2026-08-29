@@ -12,17 +12,24 @@ class SettingsProvider extends ChangeNotifier {
   static const _userKey = 'ekagra_user';
   static const _menuKey = 'ekagra_dopamine_menu';
   static const _onboardingKey = 'ekagra_onboarding_complete';
+  static const _welcomeBackShownKey = 'ekagra_welcome_back_last_shown';
 
   UserModel _user = UserModel.guest();
   DopamineMenu _menu = DopamineMenu.defaults;
   bool _loaded = false;
   bool _darkMode = false;
+  DateTime? _welcomeBackShownAt;
+
+  /// Active-at value from *before* this app open — the "gap" the
+  /// welcome-back state is measured against.
+  DateTime? _previousActiveAt;
 
   UserModel get user => _user;
   DopamineMenu get menu => _menu;
   bool get loaded => _loaded;
   bool get darkMode => _darkMode;
   bool get onboardingComplete => _user.onboardingComplete;
+  DateTime? get welcomeBackShownAt => _welcomeBackShownAt;
   bool get notificationsEnabled => _user.notifications.permissionGranted;
 
   String get currentEncouragement {
@@ -62,9 +69,52 @@ class SettingsProvider extends ChangeNotifier {
             key: _menuKey);
     if (menu != null) _menu = menu;
 
+    _welcomeBackShownAt = _parseDay(prefs.getString(_welcomeBackShownKey));
+    _previousActiveAt = _user.lastActiveAt;
     _darkMode = prefs.getBool('ekagra_dark_mode') ?? false;
     _loaded = true;
     notifyListeners();
+  }
+
+  static DateTime? _parseDay(String? raw) =>
+      raw == null ? null : DateTime.tryParse(raw);
+
+  /// WI-1.3: once per ≥3-day gap, when there is content to return to.
+  /// The previous-active marker (captured at load, before today's touch)
+  /// is what makes the gap honest rather than always-zero.
+  bool shouldShowWelcomeBack({required bool hasContent}) {
+    if (!_user.onboardingComplete || !hasContent) return false;
+    final previous = _previousActiveAt;
+    if (previous == null) return false;
+    if (DateTime.now().difference(previous).inDays < 3) return false;
+    final shown = _welcomeBackShownAt;
+    if (shown != null && shown.isAfter(previous)) return false;
+    return true;
+  }
+
+  Future<void> markWelcomeBackShown() async {
+    _welcomeBackShownAt = DateTime.now();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _welcomeBackShownKey,
+      _welcomeBackShownAt!.toIso8601String(),
+    );
+    notifyListeners();
+  }
+
+  /// Called once per app open (main). Keeps lastActiveAt fresh so the next
+  /// gap is measured from real activity, not from onboarding day.
+  Future<void> touchLastActiveAt() async {
+    final now = DateTime.now();
+    final last = _user.lastActiveAt;
+    if (last != null &&
+        last.year == now.year &&
+        last.month == now.month &&
+        last.day == now.day) {
+      return;
+    }
+    _user = _user.copyWith(lastActiveAt: now);
+    await _persist();
   }
 
   Future<void> _persist() async {

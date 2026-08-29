@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -11,6 +12,7 @@ import '../services/ai_service.dart';
 import '../services/analytics_service.dart';
 import '../services/growth_service.dart';
 import '../services/monetization_service.dart';
+import '../services/nudge_service.dart';
 import '../utils/safe_store.dart';
 
 class TaskProvider extends ChangeNotifier {
@@ -159,12 +161,19 @@ class TaskProvider extends ChangeNotifier {
     if (idx < 0) return;
     final now = DateTime.now();
     final task = _tasks[idx];
+    // Idempotent (WI-3.1): completing an already-completed task must be a
+    // no-op — one task completion, one variable-ratio reward, ever.
+    if (task.isCompleted) return;
     _tasks[idx] = task.copyWith(
       status: TaskStatus.completed,
       completedAt: now,
       updatedAt: now,
       lastTouchedAt: now,
     );
+
+    // Completing a task cancels its pending nudges (WI-1.4): the nudge
+    // sequence must never congratulate itself into an empty room.
+    unawaited(NudgeService.instance.cancelTaskNudges(id));
 
     // North Star event: a task actually finished.
     track(Ev.taskCompleted, {

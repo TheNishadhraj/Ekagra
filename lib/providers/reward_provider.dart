@@ -64,6 +64,33 @@ class RewardProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// WI-3.1: a completed decomposition step earns a quick-tier micro-tick
+  /// (inline, no reveal screen). Variable-ratio spins stay reserved for
+  /// whole-task completion — scarcity is what makes them work.
+  Future<void> recordStepCompleted(String taskId, {String? taskTitle}) async {
+    final reward = _engine.rollQuick(
+      menu: _menu,
+      relatedTaskId: taskId,
+      relatedTaskTitle: taskTitle,
+    );
+    _history = [reward, ..._history];
+    await _persist();
+    notifyListeners();
+  }
+
+  /// WI-5.3: an active-day milestone (7/30/100) earns a rare-tier roll —
+  /// the celebration IS the reward, so the rare overlay is forced on.
+  Future<void> recordMilestoneCelebration({required int days}) async {
+    final reward = _engine.rollRare(
+      menu: _menu,
+      relatedTaskTitle: '$days days showing up',
+    );
+    _latest = reward;
+    _history = [reward, ..._history];
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> recordTaskCompletion(String taskId) async {
     // Variable ratio reinforcement (1 to 4 tasks)
     final reward = _engine.roll(

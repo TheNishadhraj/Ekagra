@@ -22,6 +22,15 @@ class TaskModel {
   final String? microCommitment;
   final String? category;
   final List<String> subtasks;
+
+  /// WI-3.1/ADR-007: decomposition progress, parallel to [subtasks].
+  /// Values are 'done' | 'skipped'; a missing/short list simply means
+  /// "no progress recorded yet" — old payloads decode with defaults
+  /// (SafeStore-compatible, additive only).
+  final List<String> stepStates;
+
+  /// Which spiciness the steps were generated at (Spiciness.name), if any.
+  final String? spiciness;
   final bool isDeleted;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -44,6 +53,8 @@ class TaskModel {
     this.microCommitment,
     this.category,
     this.subtasks = const [],
+    this.stepStates = const [],
+    this.spiciness,
     this.isDeleted = false,
     required this.createdAt,
     required this.updatedAt,
@@ -95,6 +106,8 @@ class TaskModel {
     String? microCommitment,
     String? category,
     List<String>? subtasks,
+    List<String>? stepStates,
+    String? spiciness,
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -117,6 +130,8 @@ class TaskModel {
       microCommitment: microCommitment ?? this.microCommitment,
       category: category ?? this.category,
       subtasks: subtasks ?? this.subtasks,
+      stepStates: stepStates ?? this.stepStates,
+      spiciness: spiciness ?? this.spiciness,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -141,6 +156,8 @@ class TaskModel {
         'microCommitment': microCommitment,
         'category': category,
         'subtasks': subtasks,
+        'stepStates': stepStates,
+        'spiciness': spiciness,
         'isDeleted': isDeleted,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
@@ -176,6 +193,11 @@ class TaskModel {
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      stepStates: (json['stepStates'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      spiciness: json['spiciness'] as String?,
       isDeleted: json['isDeleted'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),

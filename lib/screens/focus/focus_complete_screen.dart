@@ -21,6 +21,8 @@ class FocusCompleteScreen extends StatefulWidget {
 }
 
 class _FocusCompleteScreenState extends State<FocusCompleteScreen> {
+  bool _hyperfocus = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +39,7 @@ class _FocusCompleteScreenState extends State<FocusCompleteScreen> {
     // about — it predicts both high value and burnout risk.
     if (minutes >= 120) {
       track(Ev.hyperfocusDetected, {'duration_minutes': minutes});
+      _hyperfocus = true;
     }
   }
 
@@ -105,6 +108,16 @@ class _FocusCompleteScreenState extends State<FocusCompleteScreen> {
                         'Task: $taskTitle',
                         style: EkagraTypography.body.copyWith(
                           color: EkagraColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                    if (_hyperfocus) ...[
+                      const SizedBox(height: EkagraSpacing.sm),
+                      Text(
+                        'That was a deep dive — $minutes minutes. That is the brain you are building 💛',
+                        style: EkagraTypography.caption.copyWith(
+                          color: EkagraColors.primary,
                         ),
                         textAlign: TextAlign.center,
                       ),

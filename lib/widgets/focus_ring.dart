@@ -11,12 +11,19 @@ class FocusRing extends StatelessWidget {
   final Color color;
   final double size;
 
+  /// When false, renders a pure shrinking arc with no time text — the
+  /// "no cognitive processing" variant used for inline task countdowns
+  /// (WI-2.2). Wall-clock math is inherited from `FocusSession`; this
+  /// widget never owns a timer.
+  final bool showTime;
+
   const FocusRing({
     super.key,
     required this.progress,
     required this.remaining,
     this.color = EkagraColors.focusActive,
     this.size = 260,
+    this.showTime = true,
   });
 
   @override
@@ -25,26 +32,28 @@ class FocusRing extends StatelessWidget {
       width: size,
       height: size,
       child: CustomPaint(
-        painter: _FocusRingPainter(progress: progress, color: color),
+        painter: _FocusRingPainter(progress: progress, color: color, size: size),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                DateHelpers.formatDuration(remaining),
-                style: EkagraTypography.h1.copyWith(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w700,
-                  color: EkagraColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                progress >= 1 ? 'Done' : 'remaining',
-                style: EkagraTypography.caption,
-              ),
-            ],
-          ),
+          child: showTime
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      DateHelpers.formatDuration(remaining),
+                      style: EkagraTypography.h1.copyWith(
+                        fontSize: size >= 200 ? 48 : (size / 260 * 48),
+                        fontWeight: FontWeight.w700,
+                        color: EkagraColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      progress >= 1 ? 'Done' : 'remaining',
+                      style: EkagraTypography.caption,
+                    ),
+                  ],
+                )
+              : const SizedBox.shrink(),
         ),
       ),
     );
@@ -54,22 +63,27 @@ class FocusRing extends StatelessWidget {
 class _FocusRingPainter extends CustomPainter {
   final double progress;
   final Color color;
+  final double size;
 
-  _FocusRingPainter({required this.progress, required this.color});
+  _FocusRingPainter({
+    required this.progress,
+    required this.color,
+    required this.size,
+  });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 12;
+  void paint(Canvas canvas, Size canvasSize) {
+    final center = Offset(canvasSize.width / 2, canvasSize.height / 2);
+    final radius = canvasSize.width / 2 - strokeWidth / 2 - 2;
     final bg = Paint()
       ..color = EkagraColors.surfaceElevated
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
     final fg = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 14
+      ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, bg);
@@ -83,8 +97,12 @@ class _FocusRingPainter extends CustomPainter {
     );
   }
 
+  double get strokeWidth => (size / 260 * 14).clamp(2.0, 14.0);
+
   @override
   bool shouldRepaint(covariant _FocusRingPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.size != size;
   }
 }

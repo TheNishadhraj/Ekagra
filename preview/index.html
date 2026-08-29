@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ekagra — Design Preview</title>
+<style>
+  :root{
+    --primary:#7C5CFC; --primary-light:#B8A9FC; --primary-dark:#5A3FD6;
+    --bg:#FAF8FF; --surface:#FFFFFF; --elevated:#F5F3FF;
+    --text:#2D2B42; --text2:#6B6889; --text3:#9E9BB5;
+    --success:#6BCB77; --warning:#FFB84D; --info:#5CB8FF; --coral:#FF8C6B;
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px; --r-full:999px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  body{background:#EFEBFA;color:var(--text);padding:28px 20px 60px}
+  .banner{max-width:1200px;margin:0 auto 26px;background:var(--surface);border:1.5px solid var(--primary-light);
+    border-radius:var(--r-lg);padding:14px 18px;font-size:13.5px;color:var(--text2);line-height:1.5}
+  .banner b{color:var(--primary-dark)}
+  h1{font-size:21px;color:var(--text);margin-bottom:4px}
+  .row{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;max-width:1240px;margin:0 auto}
+  .shot{width:360px}
+  .phone{width:360px;height:720px;background:var(--bg);border-radius:36px;border:8px solid #23212f;
+    overflow:hidden;position:relative;box-shadow:0 14px 34px rgba(45,43,66,.18);display:flex;flex-direction:column}
+  .caption{margin:12px 4px 0;font-size:12.5px;color:#57546e;line-height:1.45}
+  .caption b{color:var(--text)}
+  .statusbar{height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;
+    font-size:11px;color:var(--text2);background:var(--bg)}
+  .appbar{padding:10px 18px;font-size:16px;font-weight:600;background:var(--bg)}
+  .content{flex:1;overflow-y:auto;padding:8px 18px 18px;scrollbar-width:none}
+  .content::-webkit-scrollbar{display:none}
+  .tabbar{height:58px;border-top:1px solid #EAE6F8;display:flex;background:var(--surface)}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;color:var(--text3)}
+  .tab.active{color:var(--primary);font-weight:600}
+  .tab .ic{font-size:19px}
+  .card{background:var(--surface);border:1px solid #EDE9F9;border-radius:var(--r-lg);padding:16px;margin-bottom:12px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:var(--r-md);
+    font-size:14.5px;font-weight:600;cursor:pointer;padding:13px;width:100%}
+  .btn-p{background:var(--primary);color:#fff}
+  .btn-s{background:var(--success);color:#fff}
+  .btn-o{background:transparent;color:var(--text2);border:1.5px solid #DDD8EE}
+  .chip{border-radius:var(--r-full);padding:7px 14px;font-size:12.5px;font-weight:600;border:none;cursor:pointer}
+  .tiny{font-size:11px;color:var(--text3)}
+  .cap{font-size:12px;color:var(--text2)}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--primary)}
+  .sheetmask{position:absolute;inset:0;background:rgba(30,26,50,.42);display:flex;align-items:flex-end;z-index:5}
+  .sheet{background:var(--surface);width:100%;border-radius:26px 26px 0 0;padding:20px 20px 26px}
+  /* focus ring */
+  .ringwrap{display:flex;justify-content:center;margin:18px 0 10px}
+  .ring{width:210px;height:210px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(var(--coral) 0 36deg, #E9E4F8 36deg 360deg);position:relative}
+  .ringhole{width:168px;height:168px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px}
+  .timeleft{font-size:38px;font-weight:700;color:var(--coral)}
+  .listtile{display:flex;align-items:center;gap:12px;padding:11px 2px}
+  .stepdone{text-decoration:lineThrough;color:var(--text3)}
+  .badge{background:#F5F3FF;border-radius:var(--r-full);padding:8px 13px;font-size:12px;color:var(--primary-dark);font-weight:600;display:inline-block}
+  .pill{background:#F1EDFB;color:var(--primary-dark);border-radius:var(--r-full);padding:6px 12px;font-size:11.5px;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>💛 Ekagra — design preview</h1>
+  Rendered from the repo's <b>real design tokens</b> (<code>lib/config/theme.dart</code>: primary #7C5CFC, warm coral #FF8C6B — never red —, radii &amp; spacing). <b>This is a static mock-up, not the compiled Flutter app</b> — this sandbox has no Flutter toolchain (<code>docs/REMAINING_WORK.md</code>). The buttons marked ✦ below are interactive demos of real shipped behavior; everything else is illustrative layout.
+</div>
+
+<div class="row">
+
+  <!-- ============ HOME ============ -->
+  <div class="shot">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>💤 💮 🔋</span></div>
+      <div class="content">
+        <div style="font-size:22px;font-weight:700;margin:8px 0 2px">Good morning ☀️</div>
+        <div class="cap">Let's make today light.</div>
+        <div style="margin:10px 0 4px"><span class="badge">2 done today ✓</span></div>
+        <div class="card" style="border:1.5px solid var(--primary-light);background:var(--elevated)">
+          <div class="eyebrow">YOUR ONE THING</div>
+          <div style="font-size:19px;font-weight:700;margin:7px 0 4px">Reply to the landlord's email</div>
+          <div class="cap">≈ 10 min · picked for your energy right now</div>
+          <button class="btn btn-p" style="margin-top:13px">▶&nbsp; Start Focus ⏱️</button>
+          <div style="text-align:center;margin-top:9px"><span class="pill">Not today → swap it</span></div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;font-size:14px;margin-bottom:2px">🍫 Tiny win logged.</div>
+          <div class="cap">2 of your steps happened today. That counts.</div>
+        </div>
+        <div class="card" style="border-style:dashed">
+          <div style="font-weight:600;font-size:14px">Brain dump 🧠</div>
+          <div class="cap">Empty your head — paste anything, hit <b>Smart split ✨</b> (mic comes later, honestly).</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab active"><span class="ic">🏠</span>Home</div>
+        <div class="tab"><span class="ic">📅</span>Day</div>
+        <div class="tab"><span class="ic">⏱️</span>Focus</div>
+        <div class="tab"><span class="ic">⚙️</span>Settings</div>
+      </div>
+    </div>
+    <div class="caption"><b>Home.</b> One Thing, ≤3 primary choices, no task counts of what's left — only what's done.</div>
+  </div>
+
+  <!-- ============ TASK DETAIL / EXECUTION MODE ============ -->
+  <div class="shot">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>💤 💮 🔋</span></div>
+      <div class="appbar">Task</div>
+      <div class="content">
+        <div style="font-size:19px;font-weight:700;margin-bottom:3px">Clean the kitchen</div>
+        <div class="cap" style="margin-bottom:12px">Today · ≈ 25 min</div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:700">Steps</span>
+          <span class="pill">Break it down 🌶️</span>
+        </div>
+
+        <div class="card" style="background:rgba(124,92,252,.06);border:1.5px solid var(--primary-light)">
+          <div class="eyebrow">ONE STEP AT A TIME</div>
+          <div id="steptitle" style="font-size:18px;font-weight:700;margin:7px 0 3px">Pick up 3 stray items</div>
+          <div class="tiny" id="stepprog">≈ 2–5 min · 0 of 13 done</div>
+          <button class="btn btn-s" style="margin-top:12px" onclick="doneStep()">✓&nbsp; Done with this step ✦</button>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-o" style="font-size:13px" onclick="skipStep()">Skip step ✦</button>
+            <button class="btn btn-o" style="font-size:13px" onclick="reveal()">See all steps ✦</button>
+          </div>
+        </div>
+
+        <div id="allsteps" class="card" style="display:none">
+          <div class="listtile"><span>✅</span><span class="stepdone">Pick up 3 stray items</span></div>
+          <div class="listtile"><span>✅</span><span class="stepdone">Put each where it lives</span></div>
+          <div class="listtile"><span>⭕</span><span>Scrape the plates</span></div>
+          <div class="listtile"><span>⭕</span><span>Stack them by the sink</span></div>
+          <div class="listtile"><span>⭕</span><span>Fill or load the washer</span></div>
+          <div class="listtile"><span>⭕</span><span>Start the washer</span></div>
+          <div class="listtile"><span>⭕</span><span>Wipe the left counter</span></div>
+          <div class="listtile"><span>⭕</span><span>Wipe the right counter</span></div>
+          <div class="listtile"><span>⭕</span><span>Wipe the stove top</span></div>
+          <div class="listtile"><span>⭕</span><span>Sweep the floor</span></div>
+          <div class="listtile"><span>⭕</span><span>Take out the trash bag</span></div>
+          <div class="listtile"><span>⭕</span><span>Put in a fresh bag</span></div>
+          <div class="listtile"><span>⭕</span><span>Hang the cloth to dry</span></div>
+          <div class="tiny" style="margin-top:6px">All 2–5 minute units · deterministic, from your phone's template file</div>
+        </div>
+
+        <div id="finishcard" class="card" style="display:none;background:rgba(107,203,119,.1);border:1.5px solid var(--success);text-align:center">
+          <div style="font-size:26px">🎉</div>
+          <div style="font-weight:700;margin:5px 0">Every step done!</div>
+          <button class="btn btn-s">Finish the task ✅</button>
+        </div>
+
+        <div class="tiny" style="margin-top:8px;text-align:center">Breakdown runs on your phone — no cloud, no account.</div>
+      </div>
+    </div>
+    <div class="caption"><b>WI-3.1 execution mode ✦.</b> Real shipped flow: one visible step, quick-tier micro-tick per done step, finish → the one variable-ratio spin. Try “Done”/“Skip”.</div>
+  </div>
+
+  <!-- ============ SPICINESS PICKER ============ -->
+  <div class="shot">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>💤 💮 🔋</span></div>
+      <div class="appbar">Task</div>
+      <div class="content">
+        <div style="font-size:19px;font-weight:700;margin-bottom:3px">Do the laundry</div>
+        <div class="cap" style="margin-bottom:12px">Today · ≈ 15 min</div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:14px;font-weight:700">Steps</span>
+          <span class="pill">Break it down 🌶️</span>
+        </div>
+        <div class="card" style="text-align:center;color:var(--text3)">…</div>
+      </div>
+      <div class="sheetmask">
+        <div class="sheet">
+          <div style="font-size:17px;font-weight:700;margin-bottom:12px">How tiny should the steps be?</div>
+          <div class="listtile" style="background:var(--elevated);border-radius:12px;padding:13px;margin-bottom:8px">
+            <span style="font-size:22px">🪵</span>
+            <div style="flex:1"><div style="font-weight:600;font-size:15px">Big steps</div><div class="tiny">3–5 steps</div></div>
+            <span class="tiny">chose ✓</span>
+          </div>
+          <div class="listtile" style="padding:13px 13px 13px 24px">
+            <span style="font-size:22px">🌰</span>
+            <div style="flex:1"><div style="font-weight:600;font-size:15px">Normal</div><div class="tiny">6–10 steps</div></div>
+          </div>
+          <div class="listtile" style="padding:13px 13px 13px 24px">
+            <span style="font-size:22px">🌶️</span>
+            <div style="flex:1"><div style="font-weight:600;font-size:15px">Tiny steps</div><div class="tiny">11–20 steps</div></div>
+          </div>
+          <div class="tiny" style="text-align:center;margin-top:12px">Runs on your phone — no cloud, no account.</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>Spiciness picker.</b> 3 choices, bounds test-enforced (3–5 / 6–10 / 11–20). Honest label under it, always.</div>
+  </div>
+
+  <!-- ============ FOCUS TIMER ============ -->
+  <div class="shot">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>💤 💮 🔋</span></div>
+      <div class="content" style="text-align:center">
+        <div class="eyebrow" style="margin-top:14px">FOCUS · 3 MIN LEFT</div>
+        <div class="ringwrap">
+          <div class="ring"><div class="ringhole">
+            <div class="timeleft">3:12</div>
+            <div class="cap">of 25:00</div>
+          </div></div>
+        </div>
+        <div style="font-size:17px;font-weight:700">Reply to the landlord's email</div>
+        <div class="cap" style="margin:4px 0 16px">Ring shifts amber at 25% left, <b style="color:var(--coral)">warm coral</b> at 10% — never red.</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-o">⏸ Pause</button>
+          <button class="btn btn-p">✓ Done early</button>
+        </div>
+        <div class="card" style="margin-top:16px;text-align:left">
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px">🌿 Reached for Instagram?</div>
+          <div class="cap">Gentle Block (built, inert until the Android layer lands) would offer: return to task, or a 10-min break — your call.</div>
+        </div>
+        <div class="tiny" style="margin-top:10px">Session survives app kill / reboot (wall-clock reconcile)</div>
+      </div>
+    </div>
+    <div class="caption"><b>Focus timer.</b> Countdown palette + FocusRing from WI-2.2; coral-for-urgency is the honest-color rule in action.</div>
+  </div>
+
+  <!-- ============ MILESTONE ============ -->
+  <div class="shot">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>💤 💮 🔋</span></div>
+      <div class="content">
+        <div style="font-size:22px;font-weight:700;margin:8px 0 2px">Good morning ☀️</div>
+        <div class="card" style="margin-top:14px"><div style="font-weight:600;font-size:14px">Your one thing 💛</div></div>
+        <div class="card" style="border-style:dashed"><div class="cap">Today's list is light…</div></div>
+      </div>
+      <div class="sheetmask">
+        <div class="sheet" style="text-align:center">
+          <div style="font-size:40px">💛</div>
+          <div style="font-size:19px;font-weight:700;margin:10px 0 6px">30 days you showed up for yourself.</div>
+          <div class="cap">Gaps included. They count too.</div>
+          <button class="btn btn-p" style="margin-top:16px" onclick="this.textContent='🎁 Rare treat unlocked — reveal screen next ✦'">Celebrate 🎁 ✦</button>
+          <div style="margin-top:8px"><span class="tiny" style="text-decoration:underline;cursor:pointer">Just warm feelings, thanks</span></div>
+          <div class="tiny" style="margin-top:12px">Totals, never streaks — a gap costs nothing (Rule 4)</div>
+        </div>
+      </div>
+    </div>
+    <div class="caption"><b>WI-5.3 milestone.</b> Fires once at 7 / 30 / 100 active days; forced-rare reward roll on claim.</div>
+  </div>
+
+  <!-- ============ MENU REFRESH ============ -->
+  <div class="shot">
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>💤 💮 🔋</span></div>
+      <div class="appbar">Dopamine Menu</div>
+      <div class="content">
+        <div style="font-size:18px;font-weight:700;margin:6px 0 10px">Fresh this month ✨</div>
+        <div class="tiny" style="margin-bottom:6px">New toys, same box. One tap adds them.</div>
+        <div class="card" style="padding:8px 16px">
+          <div class="listtile"><span style="font-size:22px">🛁</span><div style="flex:1;font-size:15px">Take a long bath</div><span class="pill">Add ✦</span></div>
+          <div class="listtile"><span style="font-size:22px">🎧</span><div style="flex:1;font-size:15px">One full album, no skips</div><span class="pill">Add ✦</span></div>
+          <div class="listtile"><span style="font-size:22px">🌙</span><div style="flex:1;font-size:15px">Lie in the grass at night</div><span class="pill">Add ✦</span></div>
+        </div>
+        <div style="font-size:14px;font-weight:700;margin:16px 0 6px">Quick hits (2 min)</div>
+        <div class="card" style="padding:8px 16px">
+          <div class="listtile"><input type="checkbox" checked><span style="font-size:15px">🎵 Listen to 1 hype song</span></div>
+          <div class="listtile"><input type="checkbox" checked><span style="font-size:15px">🍫 Eat a snack</span></div>
+          <div class="listtile"><input type="checkbox"><span style="font-size:15px">💃 60-second dance break</span></div>
+          <div class="listtile tiny">✨ + Add your own</div>
+        </div>
+        <div class="tiny" style="text-align:center;margin-top:10px">Suggestions rotate monthly, deterministic — nothing to configure</div>
+      </div>
+    </div>
+    <div class="caption"><b>WI-5.3 menu refresh.</b> 3 monthly suggestions, never suggesting what you already own.</div>
+  </div>
+
+</div>
+
+<script>
+  // ✦ demos mirror REAL shipped behavior of the execution-mode state machine
+  const steps=["Pick up 3 stray items","Put each where it lives","Scrape the plates","Stack them by the sink","Fill or load the washer","Start the washer","Wipe the left counter","Wipe the right counter","Wipe the stove top","Sweep the floor","Take out the trash bag","Put in a fresh bag","Hang the cloth to dry"];
+  let i=0, resolved=0;
+  function paint(){
+    document.getElementById('steptitle').textContent = steps[i];
+    document.getElementById('stepprog').textContent = "≈ 2–5 min · "+resolved+" of "+steps.length+" done";
+  }
+  function doneStep(){
+    resolved++; i=Math.min(i+1, steps.length-1);
+    if(resolved===steps.length){
+      document.querySelector('#allsteps').style.display='none';
+      document.getElementById('finishcard').style.display='block';
+    } else { paint(); flash("🍫 Tiny win logged."); }
+    syncList();
+  }
+  function skipStep(){ i=Math.min(i+1, steps.length-1); resolved++; paint(); syncList();
+    if(resolved===steps.length) document.getElementById('finishcard').style.display='block'; }
+  function syncList(){
+    const rows=document.querySelectorAll('#allsteps .listtile span:last-child');
+    rows.forEach((el,k)=>{ el.className = k<resolved ? 'stepdone':''; el.previousElementSibling.textContent = k<resolved?'✅':'⭕';});
+  }
+  function reveal(){
+    const el=document.getElementById('allsteps');
+    el.style.display = el.style.display==='none'?'block':'none';
+    syncList();
+  }
+  function flash(msg){
+    let t=document.getElementById('toast'); if(!t){t=document.createElement('div');t.id='toast';
+      t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#7C5CFC;color:#fff;padding:11px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:50;box-shadow:0 8px 20px rgba(45,43,66,.3)';
+      document.body.appendChild(t);}
+    t.textContent=msg; t.style.opacity=1; clearTimeout(t._h);
+    t._h=setTimeout(()=>t.style.opacity=0,1600);
+  }
+</script>
+</body>
+</html>

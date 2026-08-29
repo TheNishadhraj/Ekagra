@@ -62,7 +62,14 @@ class GrowthService extends ChangeNotifier {
   /// users who return three days running rarely churn in week one.
   static const int habitThresholdDays = 3;
 
+  /// WI-5.3: active-day milestones celebrated with the user (7/30/100).
+  /// "Days showing up" — total, not consecutive, so a gap never resets
+  /// progress toward the next one (Spec Rule 4: never a streak).
+  static const List<int> milestoneDays = [7, 30, 100];
+
   Set<String> _completedSteps = {};
+  Set<int> _celebratedMilestones = {};
+  int? _pendingMilestone;
   DateTime? _installedAt;
   DateTime? _activatedAt;
   DateTime? _lastActiveDay;
@@ -89,6 +96,10 @@ class GrowthService extends ChangeNotifier {
   int get totalRewardsClaimed => _totalRewardsClaimed;
 
   bool get isActivated => _activatedAt != null;
+
+  /// The milestone (if any) waiting to be celebrated. Set exactly once per
+  /// milestone; cleared when the user has seen it (celebrated or dismissed).
+  int? get pendingMilestone => _pendingMilestone;
   bool get hasHabit => _habitFormedAt != null;
 
   int get daysSinceInstall => _installedAt == null
@@ -129,6 +140,10 @@ class GrowthService extends ChangeNotifier {
         _installedAt = _parse(json['installedAt']);
         _activatedAt = _parse(json['activatedAt']);
         _lastActiveDay = _parse(json['lastActiveDay']);
+        _celebratedMilestones = ((json['celebratedMilestones'] as List?)
+                    ?.map((e) => (e as num).toInt()) ??
+                const [])
+            .toSet();
         _habitFormedAt = _parse(json['habitFormedAt']);
         _consecutiveActiveDays =
             (json['consecutiveActiveDays'] as num?)?.toInt() ?? 0;
@@ -152,6 +167,17 @@ class GrowthService extends ChangeNotifier {
   DateTime? _parse(Object? v) =>
       v == null ? null : DateTime.tryParse(v as String);
 
+  /// Called by the UI once the milestone sheet has been seen. One-shot by
+  /// construction: the day is marked celebrated either way.
+  Future<void> clearPendingMilestone() async {
+    final m = _pendingMilestone;
+    if (m == null) return;
+    _celebratedMilestones.add(m);
+    _pendingMilestone = null;
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
@@ -161,6 +187,7 @@ class GrowthService extends ChangeNotifier {
         'installedAt': _installedAt?.toIso8601String(),
         'activatedAt': _activatedAt?.toIso8601String(),
         'lastActiveDay': _lastActiveDay?.toIso8601String(),
+        'celebratedMilestones': _celebratedMilestones.toList(),
         'habitFormedAt': _habitFormedAt?.toIso8601String(),
         'consecutiveActiveDays': _consecutiveActiveDays,
         'totalActiveDays': _totalActiveDays,
@@ -237,6 +264,21 @@ class GrowthService extends ChangeNotifier {
       });
     }
 
+    // WI-5.3: crossing an active-day milestone arms a one-shot
+    // celebration (fire-once per milestone; the earliest uncrossed one).
+    if (_pendingMilestone == null) {
+      for (final m in milestoneDays) {
+        if (_totalActiveDays >= m && !_celebratedMilestones.contains(m)) {
+          _pendingMilestone = m;
+          track(Ev.activeDayMilestone, {
+            'days': m,
+            'total_active_days': _totalActiveDays,
+          });
+          break;
+        }
+      }
+    }
+
     track(Ev.appOpened, {
       'days_since_last': last == null
           ? 0
@@ -291,6 +333,8 @@ class GrowthService extends ChangeNotifier {
   @visibleForTesting
   Future<void> resetForTest() async {
     _completedSteps = {};
+    _celebratedMilestones = {};
+    _pendingMilestone = null;
     _installedAt = DateTime.now();
     _activatedAt = null;
     _lastActiveDay = null;

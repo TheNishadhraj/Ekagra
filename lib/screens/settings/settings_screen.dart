@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../config/routes.dart';
 import '../../config/theme.dart';
+import '../../providers/energy_provider.dart';
+import '../../providers/focus_provider.dart';
+import '../../providers/mood_provider.dart';
 import '../../providers/reward_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/task_provider.dart';
 import '../../services/analytics_service.dart';
+import '../../services/export_service.dart';
 import '../../services/monetization_service.dart';
+import '../../services/nudge_service.dart';
+import '../../utils/rsd_safe_copy.dart';
 import '../shared/ekagra_paywall_sheet.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -122,11 +130,20 @@ class SettingsScreen extends StatelessWidget {
               subtitle: const Text('Max 3 friendly reminders per day'),
               value: settings.notificationsEnabled,
               activeThumbColor: EkagraColors.primary,
-              onChanged: (val) {
+              onChanged: (val) async {
+                // WI-1.4: the switch is real now — it gates actual local
+                // notifications, and turning it off cancels everything
+                // pending (test-enforced).
                 if (val) {
-                  settings.enableNotifications();
+                  await NudgeService.instance.requestPermission();
+                  await settings.enableNotifications();
+                  await NudgeService.instance.enabledSet(true);
+                  await NudgeService.instance.scheduleDailyBrief(
+                    hour: settings.user.notifications.morning.hour,
+                  );
                 } else {
-                  settings.disableNotifications();
+                  await settings.disableNotifications();
+                  await NudgeService.instance.enabledSet(false);
                 }
               },
             ),
@@ -154,17 +171,9 @@ class SettingsScreen extends StatelessWidget {
             _sectionHeader('DATA & PRIVACY'),
             ListTile(
               title: const Text('Export My Data'),
-              subtitle: const Text('Export tasks & focus history as CSV/JSON'),
+              subtitle: const Text('Export tasks & rewards as JSON + CSV'),
               trailing: const Icon(Icons.download_rounded),
-              onTap: () {
-                track(Ev.dataExported, {'format': 'json'});
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('📤 Data export initiated! File saved locally.'),
-                    backgroundColor: EkagraColors.primary,
-                  ),
-                );
-              },
+              onTap: () => _exportData(context),
             ),
 
             // Privacy-first instrumentation: the user can switch off
@@ -246,6 +255,50 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// K18 fix: export is real now. Everything is serialized locally, written
+  /// to the app's documents directory, and handed to the OS share sheet.
+  /// The success snackbar may only ever appear after a file actually exists
+  /// on disk — the old "File saved locally" message with no file behind it
+  /// was a brand violation (see docs/IMPLEMENTATION_PROMPT.md, WI-1.1).
+  Future<void> _exportData(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final payload = ExportService.buildExportPayload(
+      tasks: context.read<TaskProvider>().allIncludingDeleted,
+      rewards: context.read<RewardProvider>().history,
+      energyLogs: context.read<EnergyProvider>().logs,
+      moodLogs: context.read<MoodProvider>().logs,
+      user: context.read<SettingsProvider>().user,
+      menu: context.read<SettingsProvider>().menu,
+      todayFocusMinutes: context.read<FocusProvider>().todayFocusMinutes,
+    );
+
+    try {
+      final file = await ExportService().writeExport(payload: payload);
+      track(Ev.dataExported, {
+        'format': 'json',
+        'bytes': await file.length(),
+        'task_count': (payload['tasks'] as List).length,
+      });
+      await Share.shareXFiles([XFile(file.path)], text: 'Ekagra export');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            '📤 Exported. Share it or save it wherever you like.',
+          ),
+          backgroundColor: EkagraColors.primary,
+        ),
+      );
+    } catch (_) {
+      // Honest failure only. Never claim a file that does not exist.
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(RsdSafeCopy.unknownError),
+          backgroundColor: EkagraColors.textSecondary,
+        ),
+      );
+    }
   }
 
   Widget _sectionHeader(String title) {

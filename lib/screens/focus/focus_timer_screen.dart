@@ -10,6 +10,7 @@ import '../../providers/task_provider.dart';
 import '../../services/analytics_service.dart';
 import '../../services/growth_service.dart';
 import '../../services/monetization_service.dart';
+import '../../utils/countdown_palette.dart';
 import '../../widgets/focus_ring.dart';
 import '../../widgets/pro_gate.dart';
 import 'ambient_player.dart';
@@ -72,15 +73,6 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
               },
             ),
             ListTile(
-              leading: const Text('🤝', style: TextStyle(fontSize: 22)),
-              title: const Text('Body double with someone'),
-              subtitle: const Text('Focus alongside 100+ active users'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.pushNamed(context, AppRoutes.bodyDouble);
-              },
-            ),
-            ListTile(
               leading: const Text('⏸', style: TextStyle(fontSize: 22)),
               title: const Text('Take a break'),
               subtitle: const Text('Pause timer for a quick 5-min breather'),
@@ -109,6 +101,16 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
     final focus = context.watch<FocusProvider>();
     final taskProvider = context.watch<TaskProvider>();
     final currentTask = focus.currentTask ?? widget.task ?? taskProvider.oneThing;
+
+    // Colour transitions at 25% / 10% remaining (WI-2.2, Rule 3): warm
+    // amber then warm coral — never red.
+    final plannedSeconds =
+        (focus.session?.plannedMinutes ?? _selectedMinutes) * 60;
+    final ringColor = focus.isIdle
+        ? EkagraColors.focusActive
+        : CountdownPalette.colorForRemainingFraction(
+            plannedSeconds <= 0 ? 0 : focus.remaining.inSeconds / plannedSeconds,
+          );
 
     return Scaffold(
       backgroundColor: EkagraColors.background,
@@ -139,6 +141,7 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
               FocusRing(
                 progress: focus.progress,
                 remaining: focus.remaining,
+                color: ringColor,
               ),
 
               const SizedBox(height: EkagraSpacing.xl),
